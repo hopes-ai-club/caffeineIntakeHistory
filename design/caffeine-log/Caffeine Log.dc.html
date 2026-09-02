@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; padding: 0; background: #0E0C0A; }
+  * { box-sizing: border-box; }
+  a { color: #E8913F; text-decoration: none; }
+  a:hover { color: #F2A85F; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</helmet>
+<div style="min-height: 100%; background: #0E0C0A; padding: 56px 64px 80px; font-family: 'IBM Plex Sans', Helvetica, sans-serif; color: #F4EEE5;">
+  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 44px;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 0.14em; color: #8E8378; text-transform: uppercase;">Caffeine log · mobile</div>
+    <div style="font-size: 34px; font-weight: 600; letter-spacing: -0.01em;">半減期でカフェインを管理するログアプリ</div>
+    <div style="font-size: 16px; color: #A2968A; max-width: 620px; text-wrap: pretty;">1杯を2タップで記録し、「いま体内に何mg残っているか」と「何時までなら飲めるか」を主役にした4画面。</div>
+  </div>
+
+  <div style="display: flex; gap: 48px; flex-wrap: wrap; align-items: flex-start;">
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #8E8378;">01 · TODAY</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="height: 100%; background: #17130F; padding: 60px 20px 0; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 22px;">
+            <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.01em;">今日</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378;">9月2日 水</div>
+          </div>
+
+          <div style="background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 22px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: flex-end; gap: 8px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 54px; line-height: 0.9; font-weight: 500; color: #F4EEE5; letter-spacing: -0.02em;">{{ intake }}</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 16px; color: #8E8378; padding-bottom: 5px;">/ {{ limit }} mg</div>
+            </div>
+            <div style="height: 8px; border-radius: 99px; background: rgba(244,238,229,0.09); overflow: hidden;">
+              <div style="{{ barStyle }}"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 14px;">
+              <div style="color: #A2968A;">目標まで あと <span style="font-family: 'IBM Plex Mono', monospace; color: #F4EEE5;">{{ headroom }}mg</span></div>
+              <div style="color: #A2968A;">3杯</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 22px; padding: 20px 20px 14px;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px;">
+              <div style="font-size: 15px; color: #A2968A;">いま体内に残っている量</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378;">14:05</div>
+            </div>
+            <div style="display: flex; align-items: flex-end; gap: 7px; margin-bottom: 10px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 34px; line-height: 1; color: #E8913F;">118</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #8E8378; padding-bottom: 3px;">mg</div>
+            </div>
+            <svg viewBox="0 0 300 96" width="100%" height="96" preserveAspectRatio="none" style="display: block; overflow: visible;">
+              <defs>
+                <linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#E8913F" stop-opacity="0.30"></stop>
+                  <stop offset="100%" stop-color="#E8913F" stop-opacity="0"></stop>
+                </linearGradient>
+              </defs>
+              <path d="M0,90 L22,90 L26,24 C36,42 46,54 66,60 L68,60 L70,28 C84,44 98,56 120,64 L148,72 L150,46 C168,56 200,68 240,78 L300,86 L300,96 L0,96 Z" fill="url(#curveFill)"></path>
+              <path d="M0,90 L22,90 L26,24 C36,42 46,54 66,60 L68,60 L70,28 C84,44 98,56 120,64 L148,72 L150,46 C168,56 200,68 240,78 L300,86" fill="none" stroke="#E8913F" stroke-width="2" stroke-linejoin="round"></path>
+              <line x1="182" y1="0" x2="182" y2="96" stroke="rgba(244,238,229,0.22)" stroke-width="1" stroke-dasharray="3 4"></line>
+              <circle cx="182" cy="62" r="4.5" fill="#E8913F" stroke="#17130F" stroke-width="2"></circle>
+            </svg>
+            <div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6F665C; margin-top: 2px;">
+              <div>06</div>
+              <div>12</div>
+              <div>18</div>
+              <div>24</div>
+            </div>
+          </div>
+
+          <sc-if value="{{ showCutoff }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top: 14px; display: flex; align-items: center; gap: 12px; background: rgba(232,145,63,0.10); border: 1px solid rgba(232,145,63,0.28); border-radius: 18px; padding: 14px 16px;">
+              <div style="width: 8px; height: 8px; border-radius: 99px; background: #E8913F; flex: none;"></div>
+              <div style="font-size: 14px; color: #EBD9C4; text-wrap: pretty;">23:00 就寝なら <span style="font-family: 'IBM Plex Mono', monospace;">15:20</span> までが最後の1杯</div>
+            </div>
+          </sc-if>
+
+          <div style="margin-top: 22px; display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
+            <div style="font-size: 15px; font-weight: 500;">きょうの記録</div>
+            <div style="font-size: 14px; color: #8E8378;">すべて</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 1px; background: rgba(244,238,229,0.07); border-radius: 16px; overflow: hidden;">
+            <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">07:20</div>
+              <div style="flex: 1; font-size: 15px;">ドリップコーヒー <span style="color: #8E8378;">M</span></div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">165</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">10:05</div>
+              <div style="flex: 1; font-size: 15px;">エスプレッソ <span style="color: #8E8378;">1shot</span></div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">63</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">13:40</div>
+              <div style="flex: 1; font-size: 15px;">緑茶 <span style="color: #8E8378;">350ml</span></div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">17</div>
+            </div>
+          </div>
+
+          <div style="flex: 1;"></div>
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 14px 0 12px;">
+            <div style="flex: 1; display: flex; gap: 8px; overflow: hidden;">
+              <div style="display: flex; align-items: center; gap: 8px; background: #241E17; border: 1px solid rgba(244,238,229,0.09); border-radius: 99px; padding: 11px 14px; font-size: 14px; white-space: nowrap;">ドリップ <span style="font-family: 'IBM Plex Mono', monospace; color: #8E8378;">165</span></div>
+              <div style="display: flex; align-items: center; gap: 8px; background: #241E17; border: 1px solid rgba(244,238,229,0.09); border-radius: 99px; padding: 11px 14px; font-size: 14px; white-space: nowrap;">ラテ <span style="font-family: 'IBM Plex Mono', monospace; color: #8E8378;">75</span></div>
+            </div>
+            <div style="width: 52px; height: 52px; border-radius: 99px; background: #E8913F; color: #17130F; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 500; flex: none;">+</div>
+          </div>
+
+          <div style="display: flex; padding: 6px 0 34px; border-top: 1px solid rgba(244,238,229,0.07);">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 10px;">
+              <div style="width: 18px; height: 18px; border-radius: 5px; background: #E8913F;"></div>
+              <div style="font-size: 11px; color: #F4EEE5;">今日</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 10px;">
+              <div style="width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #6F665C;"></div>
+              <div style="font-size: 11px; color: #8E8378;">履歴</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 10px;">
+              <div style="width: 18px; height: 18px; border-radius: 99px; border: 1.5px solid #6F665C;"></div>
+              <div style="font-size: 11px; color: #8E8378;">統計</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-top: 10px;">
+              <div style="width: 18px; height: 18px; border-radius: 99px; border: 1.5px solid #6F665C;"></div>
+              <div style="font-size: 11px; color: #8E8378;">設定</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #8E8378;">02 · ADD A CUP</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="height: 100%; background: #100D0B; padding: 60px 0 0; display: flex; flex-direction: column;">
+          <div style="flex: 1;"></div>
+          <div style="background: #17130F; border-radius: 30px 30px 0 0; border-top: 1px solid rgba(244,238,229,0.09); padding: 22px 20px 34px; display: flex; flex-direction: column;">
+            <div style="width: 44px; height: 4px; border-radius: 99px; background: rgba(244,238,229,0.18); align-self: center; margin-bottom: 20px;"></div>
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px;">
+              <div style="font-size: 22px; font-weight: 600;">1杯を記録</div>
+              <div style="font-size: 15px; color: #8E8378;">閉じる</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 22px;">
+              <div style="background: rgba(232,145,63,0.12); border: 1.5px solid #E8913F; border-radius: 18px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 14px; font-weight: 500;">ドリップ</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #E8913F;">165mg</div>
+              </div>
+              <div style="background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 14px; font-weight: 500;">エスプレッソ</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8E8378;">63mg</div>
+              </div>
+              <div style="background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 14px; font-weight: 500;">ラテ</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8E8378;">75mg</div>
+              </div>
+              <div style="background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 14px; font-weight: 500;">緑茶</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8E8378;">30mg</div>
+              </div>
+              <div style="background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 14px; font-weight: 500;">紅茶</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8E8378;">45mg</div>
+              </div>
+              <div style="background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 14px; font-weight: 500;">エナドリ</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8E8378;">142mg</div>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #1D1813; border: 1px dashed rgba(244,238,229,0.18); border-radius: 16px; padding: 14px 16px; margin-bottom: 22px;">
+              <div style="font-size: 14px; color: #A2968A;">プリセットを使わず手動で入力</div>
+              <div style="display: flex; align-items: baseline; gap: 4px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; color: #F4EEE5; border-bottom: 1.5px solid #E8913F; padding: 0 8px 2px;">165</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378;">mg</div>
+              </div>
+            </div>
+            <div style="font-size: 13px; color: #8E8378; margin-bottom: 10px;">サイズ</div>
+            <div style="display: flex; gap: 6px; background: #221C16; border-radius: 14px; padding: 5px; margin-bottom: 22px;">
+              <div style="flex: 1; text-align: center; padding: 11px 0; border-radius: 10px; font-size: 15px; color: #A2968A;">S<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6F665C;"> 240</span></div>
+              <div style="flex: 1; text-align: center; padding: 11px 0; border-radius: 10px; background: #3A2F24; color: #F4EEE5; font-size: 15px;">M<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A2968A;"> 350</span></div>
+              <div style="flex: 1; text-align: center; padding: 11px 0; border-radius: 10px; font-size: 15px; color: #A2968A;">L<span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6F665C;"> 470</span></div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-top: 1px solid rgba(244,238,229,0.07);">
+              <div style="font-size: 15px; color: #A2968A;">飲んだ時刻</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 16px;">14:05</div>
+                <div style="font-size: 13px; color: #E8913F; background: rgba(232,145,63,0.12); border-radius: 99px; padding: 5px 11px;">いま</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0 22px; border-top: 1px solid rgba(244,238,229,0.07);">
+              <div style="font-size: 15px; color: #A2968A;">この1杯で</div>
+              <div style="font-size: 15px; color: #F4EEE5;">今日 <span style="font-family: 'IBM Plex Mono', monospace;">410</span> / {{ limit }} mg</div>
+            </div>
+
+            <div style="background: #E8913F; color: #17130F; border-radius: 18px; padding: 18px; text-align: center; font-size: 17px; font-weight: 600;">記録する</div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #8E8378;">03 · IN YOUR BODY</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="height: 100%; background: #17130F; padding: 60px 20px 34px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 24px;">
+            <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.01em;">体内残量</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378;">半減期 5.0h</div>
+          </div>
+
+          <div style="display: flex; align-items: flex-end; gap: 8px; margin-bottom: 4px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 64px; line-height: 0.85; color: #E8913F; letter-spacing: -0.02em;">118</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 17px; color: #8E8378; padding-bottom: 6px;">mg</div>
+          </div>
+          <div style="font-size: 14px; color: #A2968A; margin-bottom: 20px;">ピークは 10:20 の <span style="font-family: 'IBM Plex Mono', monospace;">213mg</span></div>
+
+          <div style="background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 22px; padding: 18px 16px 12px;">
+            <svg viewBox="0 0 320 150" width="100%" height="170" style="display: block; overflow: visible;">
+              <defs>
+                <linearGradient id="curveFill2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#E8913F" stop-opacity="0.28"></stop>
+                  <stop offset="100%" stop-color="#E8913F" stop-opacity="0"></stop>
+                </linearGradient>
+              </defs>
+              <line x1="0" y1="34" x2="320" y2="34" stroke="rgba(210,96,63,0.4)" stroke-width="1" stroke-dasharray="4 5"></line>
+              <text x="320" y="28" text-anchor="end" fill="#D2603F" font-size="10" font-family="IBM Plex Mono, monospace">上限 200mg</text>
+              <path d="M0,142 L22,142 L27,30 C40,58 52,76 70,84 L72,84 L75,34 C92,58 108,76 130,88 L158,100 L161,64 C182,82 214,104 250,118 L320,132 L320,150 L0,150 Z" fill="url(#curveFill2)"></path>
+              <path d="M0,142 L22,142 L27,30 C40,58 52,76 70,84 L72,84 L75,34 C92,58 108,76 130,88 L158,100 L161,64 C182,82 214,104 250,118 L320,132" fill="none" stroke="#E8913F" stroke-width="2.2" stroke-linejoin="round"></path>
+              <line x1="196" y1="0" x2="196" y2="150" stroke="rgba(244,238,229,0.22)" stroke-width="1" stroke-dasharray="3 4"></line>
+              <circle cx="196" cy="90" r="5" fill="#E8913F" stroke="#221C16" stroke-width="2.5"></circle>
+              <line x1="284" y1="0" x2="284" y2="150" stroke="rgba(122,160,190,0.45)" stroke-width="1"></line>
+              <text x="284" y="12" text-anchor="end" fill="#7AA0BE" font-size="10" font-family="IBM Plex Mono, monospace">就寝 23:00</text>
+            </svg>
+            <div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6F665C; padding-top: 6px;">
+              <div>06</div>
+              <div>10</div>
+              <div>14</div>
+              <div>18</div>
+              <div>22</div>
+              <div>02</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; display: flex; gap: 10px;">
+            <div style="flex: 1; background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 13px; color: #8E8378;">就寝時の残量</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: #F4EEE5;">41<span style="font-size: 13px; color: #8E8378;"> mg</span></div>
+              <div style="font-size: 12px; color: #7AA0BE;">入眠には概ね問題なし</div>
+            </div>
+            <div style="flex: 1; background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 7px;">
+              <div style="font-size: 13px; color: #8E8378;">最後の1杯</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 24px; color: #E8913F;">15:20</div>
+              <div style="font-size: 12px; color: #8E8378;">まで（165mg想定）</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; background: #221C16; border: 1px solid rgba(244,238,229,0.07); border-radius: 22px; overflow: hidden;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px;">
+              <div style="font-size: 15px;">就寝時刻</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: #A2968A;">23:00</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-top: 1px solid rgba(244,238,229,0.07);">
+              <div style="font-size: 15px; color: #A2968A;">半減期モデル</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: #6F665C;">固定 5.0h</div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-top: 1px solid rgba(244,238,229,0.07);">
+              <div style="font-size: 15px;">1日の上限</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: #A2968A;">{{ limit }} mg</div>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0.12em; color: #8E8378;">04 · HISTORY</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="height: 100%; background: #17130F; padding: 60px 20px 34px; display: flex; flex-direction: column;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 5px;">
+            <div style="font-size: 26px; font-weight: 600; letter-spacing: -0.01em;">履歴</div>
+            <div style="font-size: 14px; color: #E8913F;">編集</div>
+          </div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #8E8378; letter-spacing: 0.04em; margin-bottom: 24px;">直近1週間 · 8/27 — 9/2</div>
+
+          <div style="display: flex; flex-direction: column; gap: 22px;">
+            <div>
+              <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px 8px;">
+                <div style="font-size: 14px; font-weight: 500; color: #F4EEE5;">今日 · 9月2日 水</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378;">245 mg</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 1px; background: rgba(244,238,229,0.07); border-radius: 16px; overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">13:40</div>
+                  <div style="flex: 1; font-size: 15px;">緑茶 <span style="color: #8E8378;">350ml</span></div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">17</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">10:05</div>
+                  <div style="flex: 1; font-size: 15px;">エスプレッソ <span style="color: #8E8378;">1shot</span></div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">63</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">07:20</div>
+                  <div style="flex: 1; font-size: 15px;">ドリップコーヒー <span style="color: #8E8378;">M</span></div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">165</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px 8px;">
+                <div style="font-size: 14px; font-weight: 500; color: #A2968A;">9月1日 火</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378;">310 mg</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 1px; background: rgba(244,238,229,0.07); border-radius: 16px; overflow: hidden;">
+                <div style="display: flex; align-items: stretch; gap: 1px;">
+                  <div style="flex: 1; display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">16:10</div>
+                    <div style="flex: 1; font-size: 15px;">エナジードリンク <span style="color: #8E8378;">355ml</span></div>
+                    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">142</div>
+                  </div>
+                  <div style="width: 78px; background: #D2603F; color: #17130F; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex: none;">削除</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">11:30</div>
+                  <div style="flex: 1; font-size: 15px;">カフェラテ <span style="color: #8E8378;">L</span></div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">110</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">08:05</div>
+                  <div style="flex: 1; font-size: 15px;">ドリップコーヒー <span style="color: #8E8378;">M</span></div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">165</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 0 4px 8px;">
+                <div style="font-size: 14px; font-weight: 500; color: #A2968A;">8月31日 月</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378;">190 mg</div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 1px; background: rgba(244,238,229,0.07); border-radius: 16px; overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">14:50</div>
+                  <div style="flex: 1; font-size: 15px;">紅茶 <span style="color: #8E8378;">350ml</span></div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">45</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 14px; background: #1D1813; padding: 14px 16px;">
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #8E8378; width: 42px;">07:45</div>
+                  <div style="flex: 1; font-size: 15px;">ドリップコーヒー <span style="color: #8E8378;">M</span></div>
+                  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 15px;">165</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1;"></div>
+
+          <div style="display: flex; gap: 12px; background: #1D1813; border: 1px solid rgba(244,238,229,0.07); border-radius: 18px; padding: 16px; margin-top: 20px;">
+            <div style="width: 8px; height: 8px; border-radius: 99px; background: #6F665C; flex: none; margin-top: 6px;"></div>
+            <div style="font-size: 13px; color: #A2968A; line-height: 1.55; text-wrap: pretty;">1週間より前の記録も端末内に保存されています。表示だけを直近1週間に絞っています。</div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dailyLimit&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:400,&quot;min&quot;:100,&quot;max&quot;:800,&quot;step&quot;:50,&quot;unit&quot;:&quot;mg&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;設定&quot;},&quot;showCutoffBanner&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;設定&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const limit = this.props.dailyLimit ?? 400;
+    const intake = 245;
+    const pct = Math.min(100, Math.round((intake / limit) * 100));
+    return {
+      limit,
+      intake,
+      headroom: Math.max(0, limit - intake),
+      showCutoff: this.props.showCutoffBanner ?? true,
+      barStyle: {
+        height: '100%',
+        width: pct + '%',
+        borderRadius: 99,
+        background: pct > 100 ? '#D2603F' : '#E8913F',
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>
