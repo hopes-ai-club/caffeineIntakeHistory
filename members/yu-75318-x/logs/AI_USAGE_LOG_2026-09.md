@@ -52,4 +52,4 @@
 | 手戻り・誤り | 最初はmain上でファイルを追加した。追加指示を受けてdocs/add-templatesを作成し、未コミットの5ファイルを引き継いでコミットした。 |
 | 所要時間 | AIありの実測時間: 3分/AIなしの見積時間: 5分 |
 | 学び | 依頼時に作業ブランチの指定も含める。 |
-| 根拠コミット | `4205c17` — docs: add curriculum templates |
+| 根拠コミット | `399e00d` — docs: add curriculum templates |
