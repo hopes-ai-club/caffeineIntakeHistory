@@ -128,10 +128,26 @@ Claudeはこれを`design/caffeine-log/`としてリポジトリに配置し、`
 
 ---
 
+## 8. フェーズ0：プロジェクトセットアップの実施
+
+ユーザー: 「AGENTS.md と CLAUDE.md を読んでから、TODO.md のフェーズ0のみを実施してください。フェーズ1以降には着手しないでください」と依頼。完了後は `npm run lint` / `npm run build` の通過確認、`TODO.md`のフェーズ0チェックボックスの更新を行い、コミットはユーザー自身が行うため実装完了時点で止めて報告するよう指示された。
+
+Claudeは`AGENTS.md`→`CLAUDE.md`→`TODO.md`の順に読み、フェーズ0（Next.js〈App Router / TypeScript / Tailwind CSS〉プロジェクトの作成）のみに着手した。
+
+- リポジトリルートには既に`CLAUDE.md`等のファイルが存在し`create-next-app`をそのまま実行できないため、一時ディレクトリで雛形を生成した上でリポジトリ直下にコピーする方式を採った。
+- `TODO.md`のフェーズ3以降の記述（`app/page.tsx`・`components/IntakeForm.tsx`・`app/stats/page.tsx`など、ルート直下を前提としたパス）に合わせ、`src/`ディレクトリなしの構成を選択した。
+- `package.json`の`name`は生成時の`caffeine-app`から`caffeine-intake-history`（リポジトリ名）に変更した。
+- 生成された設定に対し、デザインハンドオフ資料（`design/caffeine-log/ios-frame.jsx` / `support.js`）がlintエラーを出す点を確認。これらはTODO.md上も「実装不要、プレビュー用」と明記された参照専用ファイルのため、`eslint.config.mjs`の`globalIgnores`に`design/**`を追加してlint対象外とした。
+- `npm run lint`（エラー・警告0件）、`npm run build`（TypeScriptの型チェック含め成功）を確認し、`TODO.md`のフェーズ0チェックボックスを`[x]`に更新した。
+
+指示通り`git add` / `git commit`は行わず、変更内容のサマリー報告のみで作業を終了した。
+
+---
+
 ## 現時点のステータス
 
 - `CLAUDE.md`：要件定義（機能要件6項目、ユーザー体験フロー、技術要件、詳細仕様、画面構成）確定
-- `TODO.md`：フェーズ0〜7の実行計画。デザイン参照セクション・4画面構成のUIタスクを含む
+- `TODO.md`：フェーズ0〜7の実行計画。デザイン参照セクション・4画面構成のUIタスクを含む。フェーズ0は実施済み（チェック済み、未コミット）
 - `design/caffeine-log/`：Claude Designで作成したUIデザインハンドオフ一式
 - リモートリポジトリ：https://github.com/moganbo0817/caffeineIntakeHistory （Public, `main`ブランチ）
-- 実装（フェーズ0以降のコーディング）はまだ未着手
+- 実装：フェーズ0（Next.jsプロジェクトセットアップ）まで完了（lint・build確認済み、未コミット）。フェーズ1以降は未着手
