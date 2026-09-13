@@ -22,7 +22,7 @@ HTML/インラインスタイルはそのまま流用せず、Next.js（App Rout
 デザインに含まれていた「就寝時刻からの最後の1杯カットオフ表示」「残量カーブ（減衰グラフ）」「統計タブ」は `CLAUDE.md` の正式な機能要件として追加済みのため、フェーズ1〜3で対応必須の項目として扱う。
 
 ## フェーズ0: プロジェクトセットアップ
-- [ ] Next.js（App Router / TypeScript / Tailwind CSS）プロジェクトを作成
+- [x] Next.js（App Router / TypeScript / Tailwind CSS）プロジェクトを作成
 
 ## フェーズ1: データモデル・ロジック層
 - [ ] 型定義（`Preset` / `IntakeRecord` / `Settings`）
