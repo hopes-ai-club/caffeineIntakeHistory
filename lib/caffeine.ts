@@ -42,18 +42,66 @@ export interface DrinkBreakdown {
   totalMg: number;
 }
 
+/** プリセットはID、手動入力は前後の空白を除いた名前でまとめるための集計キー。 */
+function groupKey(record: Pick<IntakeRecord, "presetId" | "name">): string {
+  return record.presetId === null ? `manual:${record.name.trim()}` : `preset:${record.presetId}`;
+}
+
 /** プリセットはID、手動入力は前後の空白を除いた名前で集計する。 */
 export function getTodayBreakdown(records: readonly IntakeRecord[], now = new Date()): DrinkBreakdown[] {
   const groups = new Map<string, DrinkBreakdown>();
   for (const record of getTodayRecords(records, now)) {
     assertAmount(record.caffeineMg);
-    const key = record.presetId === null ? `manual:${record.name.trim()}` : `preset:${record.presetId}`;
+    const key = groupKey(record);
     const group = groups.get(key) ?? { presetId: record.presetId, name: record.name.trim(), count: 0, totalMg: 0 };
     group.count += 1;
     group.totalMg += record.caffeineMg;
     groups.set(key, group);
   }
   return [...groups.values()];
+}
+
+export interface QuickAddCandidate {
+  presetId: string | null;
+  name: string;
+  /** ワンタップ登録時に使う量（グループ内で直近の記録の量）。 */
+  caffeineMg: number;
+  count: number;
+}
+
+const QUICK_ADD_WINDOW_DAYS = 7;
+
+/**
+ * 「よく使う記録」＝直近7日間・現在時刻までの利用頻度上位をクイック追加候補として返す。
+ * 同数の場合は直近の摂取時刻が新しいグループを優先し、量はグループ内で最も新しい記録の量を用いる。
+ */
+export function getQuickAddCandidates(
+  records: readonly IntakeRecord[], now = new Date(), limit = 2,
+): QuickAddCandidate[] {
+  assertDate(now);
+  const nowMs = now.getTime();
+  const windowStartMs = nowMs - QUICK_ADD_WINDOW_DAYS * 24 * HOUR_MS;
+  const groups = new Map<string, QuickAddCandidate & { lastAt: number }>();
+  for (const record of records) {
+    assertAmount(record.caffeineMg);
+    const consumedAt = new Date(record.consumedAt);
+    assertDate(consumedAt);
+    const atMs = consumedAt.getTime();
+    if (atMs < windowStartMs || atMs > nowMs) continue;
+    const key = groupKey(record);
+    const group = groups.get(key)
+      ?? { presetId: record.presetId, name: record.name.trim(), caffeineMg: record.caffeineMg, count: 0, lastAt: -Infinity };
+    group.count += 1;
+    if (atMs > group.lastAt) {
+      group.lastAt = atMs;
+      group.caffeineMg = record.caffeineMg;
+    }
+    groups.set(key, group);
+  }
+  return [...groups.values()]
+    .sort((a, b) => b.count - a.count || b.lastAt - a.lastAt)
+    .slice(0, Math.max(0, limit))
+    .map(({ presetId, name, caffeineMg, count }) => ({ presetId, name, caffeineMg, count }));
 }
 
 export interface CurvePoint { at: string; residualMg: number }
