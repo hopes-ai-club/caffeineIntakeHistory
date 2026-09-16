@@ -111,6 +111,26 @@ test("cutoff includes previous-day residual and never exceeds target after round
   assert.ok(residual > 39.999);
 });
 
+test("quick add candidates rank by 7-day frequency, break ties by recency and use the latest amount", () => {
+  const now = date("2026-09-16T12:00:00Z");
+  const records = [
+    record("2026-09-09T12:00:00Z"), // 丁度7日前境界（含む）
+    record("2026-09-09T11:59:59Z"), // 境界より前は除外
+    record("2026-09-10T00:00:00Z", 90, { presetId: "espresso", name: "エスプレッソ" }),
+    record("2026-09-11T00:00:00Z", 90, { presetId: "espresso", name: "エスプレッソ" }),
+    record("2026-09-12T00:00:00Z", 20, { presetId: null, name: " 緑茶 " }),
+    record("2026-09-12T00:00:01Z", 20, { presetId: null, name: "緑茶" }),
+    record("2026-09-16T13:00:00Z"), // 未来は除外
+  ];
+  const candidates = caffeine.getQuickAddCandidates(records, now, 2);
+  assert.deepEqual(candidates, [
+    { presetId: null, name: "緑茶", caffeineMg: 20, count: 2 },
+    { presetId: "espresso", name: "エスプレッソ", caffeineMg: 90, count: 2 },
+  ]);
+  assert.equal(caffeine.getQuickAddCandidates(records, now, 0).length, 0);
+  assert.equal(caffeine.getQuickAddCandidates([], now).length, 0);
+});
+
 test("local datetime roundtrip, formatting, invalid calendar dates and bedtime", () => {
   const input = "2026-09-16T00:15";
   const iso = datetime.fromDatetimeLocal(input);
