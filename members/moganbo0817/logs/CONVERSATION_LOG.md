@@ -144,10 +144,48 @@ Claudeは`AGENTS.md`→`CLAUDE.md`→`TODO.md`の順に読み、フェーズ0（
 
 ---
 
+## 9. フェーズ2：カスタムフックの実装
+
+フェーズ0のPR（#3）マージ後、フェーズ1（データモデル・ロジック層）はチームメンバー（`yu-75318-x`）が担当・実装し、PR #5としてマージ済みだった（`lib/caffeine.ts` / `lib/datetime.ts` / `lib/storage.ts` / `data/presets.ts` / `types/index.ts` と、それらを検証する`tests/logic.test.mjs`）。
+
+moganbo0817はブランチ`feat/phase2-custom-hooks`を切り、フェーズ0のときと同様に「`AGENTS.md`と`CLAUDE.md`を読んでから、`TODO.md`のフェーズ2のみを実施し、フェーズ3以降には着手しない」よう依頼。加えて以下の追加指示があった。
+
+- カスタムフックの実装で不明点があればcontext7で最新ドキュメントを確認しながら進める
+- localStorageへの永続化やタイマー管理（`useNow`のライブ更新）など状態管理まわりはよく検討してから実装する
+- 完了後は`npm run lint` / `npm run build`の通過確認、`TODO.md`のフェーズ2チェックボックスの更新を行う
+- コミットはユーザー自身が行うため、実装完了時点で止めてサマリーを報告する
+
+対象は`TODO.md`フェーズ2の4項目（`useIntakeRecords` / `useSettings` / `useNow` / クイック追加候補の算出ロジック）。
+
+Claudeはまずフェーズ1で実装済みの`lib/caffeine.ts`・`lib/storage.ts`・`lib/datetime.ts`・`types/index.ts`・`tests/logic.test.mjs`・`package.json`（テスト実行は`node:test` + 一時ディレクトリへのtscコンパイルという構成）を読み込み、既存の規約（`StorageResult`による明示的なエラー返却、読み込み失敗時の自動削除・上書き禁止など）を把握した上で設計に入った。
+
+**`useNow`の設計判断**：当初は`useState`+`useEffect`でのタイマー管理を検討したが、「状態管理まわりはよく検討してから」という指示を受けてcontext7でReact公式ドキュメントを確認し、この用途（ブラウザ側で変化し続ける値の購読）には`useSyncExternalStore`が公式に推奨されているAPIであることを確認。`Date.now()`のような値をSSRとクライアントの初回描画で直接使うとハイドレーション不一致になる、という公式ドキュメントの明示的な注意点も踏まえ、以下の設計にした。
+
+- モジュール単位で単一のタイマーストアを持ち、複数コンポーネントから呼んでもタイマーは1つだけ動く
+- サーバーレンダリング・初回描画では`null`を返し（`getServerSnapshot`）、クライアントで購読が始まった瞬間に実時刻へ切り替える
+- バックグラウンドタブでは`setInterval`が間引かれるため、`visibilitychange`イベントでタブ復帰時に即座に時刻を更新する
+
+**`useIntakeRecords` / `useSettings`の設計判断**：同様に`useSyncExternalStore`を採用し、localStorage由来の状態もモジュール単位の単一ストアで共有する構成にした。読み込み失敗時は`status: "error"`とエラー内容をメモリ上に保持しつつ、既定値／空配列で機能自体は継続させ、`lib/storage.ts`側の「読み込み失敗時に破損データを自動削除・上書きしない」という既存の規約を壊さないようにした（書き込みは常にユーザーの明示的な操作＝ボタン押下がトリガーであり、自動上書きには当たらないと判断）。
+
+**クイック追加候補**：`TODO.md`ではフェーズ2の項目として挙げられていたが、Reactの状態やタイマーを持たない純粋な計算であるため、`lib/caffeine.ts`にフック化せず`getQuickAddCandidates`というピュア関数として追加した（既存の`getTodayBreakdown`と同じグルーピング方式を共通化）。デザインREADMEの「直近利用頻度上位2件」という仕様に基づき、直近7日間・現在時刻までの記録を対象に頻度順（同数の場合は直近の利用が新しい方を優先）で候補を返す仕様とし、`tests/logic.test.mjs`にテストケースを追加した。
+
+作成・変更したファイル：
+
+- 新規: `hooks/useNow.ts` / `hooks/useSettings.ts` / `hooks/useIntakeRecords.ts`
+- 変更: `lib/caffeine.ts`（`getQuickAddCandidates`追加、グルーピングキーの共通化）
+- 変更: `tests/logic.test.mjs`（クイック追加候補のテスト追加）
+- 変更: `TODO.md`（フェーズ2のチェックボックスを更新）
+
+`npm test`（Asia/Tokyo・America/New_Yorkの両タイムゾーンで全11ケース）、`npm run lint`、`npm run build`、`npx tsc --noEmit`がいずれも成功することを確認した。なお、3つのフック自体はDOM/Reactレンダリングを伴うテスト基盤（jsdomやtesting-library等）がリポジトリに存在せず、今回のスコープ外として追加しなかったため、実際のブラウザ・Reactツリー上での動作は未検証である旨をあわせて報告した。
+
+指示通り`git add` / `git commit`は行わず、変更内容のサマリー報告のみで作業を終了した。
+
+---
+
 ## 現時点のステータス
 
 - `CLAUDE.md`：要件定義（機能要件6項目、ユーザー体験フロー、技術要件、詳細仕様、画面構成）確定
-- `TODO.md`：フェーズ0〜7の実行計画。デザイン参照セクション・4画面構成のUIタスクを含む。フェーズ0は実施済み（チェック済み、未コミット）
+- `TODO.md`：フェーズ0〜7の実行計画。デザイン参照セクション・4画面構成のUIタスクを含む。フェーズ0〜2は実施済み（チェック済み）
 - `design/caffeine-log/`：Claude Designで作成したUIデザインハンドオフ一式
 - リモートリポジトリ：https://github.com/moganbo0817/caffeineIntakeHistory （Public, `main`ブランチ）
-- 実装：フェーズ0（Next.jsプロジェクトセットアップ）まで完了（lint・build確認済み、未コミット）。フェーズ1以降は未着手
+- 実装：フェーズ0（プロジェクトセットアップ）・フェーズ1（データモデル・ロジック層、チームメンバー`yu-75318-x`担当）・フェーズ2（カスタムフック）まで完了（lint・build・テスト確認済み）。フェーズ2はブランチ`feat/phase2-custom-hooks`上で作業し未コミット。フェーズ3以降は未着手
