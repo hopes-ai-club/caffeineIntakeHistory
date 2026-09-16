@@ -44,9 +44,9 @@ HTML/インラインスタイルはそのまま流用せず、Next.js（App Rout
 ## フェーズ3: UIコンポーネント（デザイン準拠）
 
 ### 3-0. デザイン基盤
-- [ ] Tailwindにデザイントークンを反映（`design/caffeine-log/README.md`のカラー・余白・角丸表）
-- [ ] フォント設定（IBM Plex Sans / IBM Plex Mono を `next/font/google` で読み込み。数値・時刻・mgは必ずMono）
-- [ ] ダークテーマ単一構成（`bg.canvas #0E0C0A` / `bg.base #17130F` 等）
+- [x] Tailwindにデザイントークンを反映（`design/caffeine-log/README.md`のカラー・余白・角丸表）
+- [x] フォント設定（IBM Plex Sans / IBM Plex Mono を `next/font/google` で読み込み。数値・時刻・mgは必ずMono）
+- [x] ダークテーマ単一構成（`bg.canvas #0E0C0A` / `bg.base #17130F` 等）
 
 ### 3-1. ホーム画面（`app/page.tsx`）
 - [ ] ヘッダー（「今日」＋日付）

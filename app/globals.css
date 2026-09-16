@@ -1,26 +1,67 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* 使用例: bg-bg-canvas、text-text-primary、border-border-subtle */
+  --color-bg-canvas: #0E0C0A;
+  --color-bg-base: #17130F;
+  --color-bg-overlay: #100D0B;
+  --color-surface-card: #221C16;
+  --color-surface-row: #1D1813;
+  --color-surface-selected: #3A2F24;
+  --color-surface-chip: #241E17;
+  --color-border-subtle: rgba(244,238,229,0.07);
+  --color-border-strong: rgba(244,238,229,0.18);
+  --color-text-primary: #F4EEE5;
+  --color-text-secondary: #A2968A;
+  --color-text-tertiary: #8E8378;
+  --color-text-quaternary: #6F665C;
+  --color-accent: #E8913F;
+  --color-accent-soft: rgba(232,145,63,0.12);
+  --color-danger: #D2603F;
+  --color-sleep: #7AA0BE;
+
+  /* 使用例: text-size-13（px単位、既定スケールは維持） */
+  --text-size-11: 11px;
+  --text-size-12: 12px;
+  --text-size-13: 13px;
+  --text-size-14: 14px;
+  --text-size-15: 15px;
+  --text-size-17: 17px;
+  --text-size-22: 22px;
+  --text-size-26: 26px;
+  --text-size-34: 34px;
+  --text-size-54: 54px;
+  --text-size-64: 64px;
+
+  /* 使用例: p-space-20、gap-space-16（px単位、既定スケールは維持） */
+  --spacing-space-4: 4px;
+  --spacing-space-5: 5px;
+  --spacing-space-6: 6px;
+  --spacing-space-8: 8px;
+  --spacing-space-10: 10px;
+  --spacing-space-14: 14px;
+  --spacing-space-16: 16px;
+  --spacing-space-20: 20px;
+  --spacing-space-22: 22px;
+  --spacing-space-24: 24px;
+
+  /* 使用例: rounded-radius-22（px単位、既定スケールは維持） */
+  --radius-radius-5: 5px;
+  --radius-radius-6: 6px;
+  --radius-radius-10: 10px;
+  --radius-radius-14: 14px;
+  --radius-radius-16: 16px;
+  --radius-radius-18: 18px;
+  --radius-radius-22: 22px;
+  --radius-radius-30: 30px;
+  --radius-radius-99: 99px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ibm-plex-sans), system-ui, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+:root {
+  color-scheme: dark;
 }
