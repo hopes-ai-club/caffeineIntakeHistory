@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import IntakeForm from "@/components/IntakeForm";
 import TabBar from "@/components/TabBar";
 import { useIntakeRecords } from "@/hooks/useIntakeRecords";
 import { useSettings } from "@/hooks/useSettings";
@@ -20,6 +21,62 @@ export default function HomeScreen() {
   const clock = useNow();
   const [addedAt, setAddedAt] = useState<Date | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const formRef = useRef<HTMLDivElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  const closeForm = useCallback(() => {
+    setFormOpen(false);
+    // キャンセルでも実時刻を更新し、未来の摂取日時を集計時刻に使わない。
+    setAddedAt(new Date());
+  }, []);
+
+  useEffect(() => {
+    if (!formOpen) return;
+    const wrapper = formRef.current;
+    if (!wrapper) return;
+    const fab = fabRef.current;
+    const heading = headingRef.current;
+    // フォームの階層やIDではなく、操作可能な要素だけを参照する。
+    const controls = () => Array.from(wrapper.querySelectorAll<HTMLElement>(
+      "button, input, select, textarea, a[href], [tabindex]",
+    )).filter(element => element.tabIndex >= 0
+      && !element.matches(":disabled") && !element.closest("[inert]")
+      && element.getClientRects().length > 0);
+    const focusFirst = () => controls()[0]?.focus({ preventScroll: true });
+    focusFirst();
+
+    function trapFocus(event: KeyboardEvent) {
+      if (event.key !== "Tab") return;
+      const items = controls();
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!first) return;
+      if (!items.includes(document.activeElement as HTMLElement)) {
+        // 保存失敗で操作中の入力がdisabledになった場合もシート内に戻す。
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    function keepFocusInside(event: FocusEvent) {
+      if (!wrapper?.contains(event.target as Node)) focusFirst();
+    }
+    document.addEventListener("keydown", trapFocus);
+    document.addEventListener("focusin", keepFocusInside);
+    return () => {
+      document.removeEventListener("keydown", trapFocus);
+      document.removeEventListener("focusin", keepFocusInside);
+      (fab && !fab.disabled ? fab : heading)?.focus({ preventScroll: true });
+    };
+  }, [formOpen]);
+
   // 共有時計の次のtickを待たず、保存した瞬間までの記録を表示する。
   // 残量カード接続時も、この同一のnowを現在値とグラフに渡す。
   const now = clock && addedAt && addedAt > clock ? addedAt : clock;
@@ -52,9 +109,10 @@ export default function HomeScreen() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full flex-col bg-bg-base px-space-20 pt-[max(60px,env(safe-area-inset-top))] min-[600px]:max-w-[420px]">
+    <>
+    <main inert={formOpen} className="mx-auto flex min-h-dvh w-full flex-col bg-bg-base px-space-20 pt-[max(60px,env(safe-area-inset-top))] min-[600px]:max-w-[420px]">
       <header className="mb-space-22 flex flex-wrap items-baseline justify-between gap-space-8">
-        <h1 className="text-size-26 font-semibold tracking-[-0.01em]">今日</h1>
+        <h1 ref={headingRef} tabIndex={-1} className="text-size-26 font-semibold tracking-[-0.01em]">今日</h1>
         {now && <time dateTime={now.toISOString()} className="font-mono text-size-13 text-text-tertiary">{formatDateLabel(now)}</time>}
       </header>
       {failed ? (
@@ -118,12 +176,15 @@ export default function HomeScreen() {
               </button>
             ))}
           </div>
-          {/* B担当IntakeFormの公開Props確定後に開閉を接続する。 */}
-          <button type="button" disabled aria-label="記録を追加" aria-describedby="add-unavailable" className="flex size-[52px] shrink-0 items-center justify-center rounded-radius-99 bg-accent text-[28px] font-medium text-bg-base disabled:opacity-50">+</button>
+          <button ref={fabRef} type="button" disabled={!ready} onClick={() => { if (ready) setFormOpen(true); }} aria-label="記録を追加" className={`flex size-[52px] shrink-0 items-center justify-center rounded-radius-99 bg-accent text-[28px] font-medium text-bg-base disabled:opacity-50 ${focus}`}>+</button>
         </div>
-        <p id="add-unavailable" className="mb-space-14 text-size-12 text-text-tertiary">新しい飲み物の追加は、まだ利用できません。</p>
         <TabBar />
       </div>
     </main>
+    {/* readyの変化や保存失敗で下書きを失わないよう常時マウントする。 */}
+    <div ref={formRef}>
+      <IntakeForm open={formOpen} onClose={closeForm} />
+    </div>
+    </>
   );
 }
