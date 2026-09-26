@@ -82,6 +82,21 @@ test("curve keeps pre-range residual, off-grid jumps and inclusive endpoint", ()
   assert.throws(() => caffeine.sampleResidualCurve([], date("2026-09-17"), date("2026-09-16")), RangeError);
 });
 
+test("residual peak picks the highest sampled point, keeping the earliest on ties", () => {
+  assert.equal(caffeine.findResidualPeak([]), null);
+  const tied = [
+    { at: "2026-09-16T06:00:00.000Z", residualMg: 10 },
+    { at: "2026-09-16T07:00:00.000Z", residualMg: 10 },
+  ];
+  assert.equal(caffeine.findResidualPeak(tied).at, "2026-09-16T06:00:00.000Z");
+  const points = caffeine.sampleResidualCurve([
+    record("2026-09-16T08:00:00Z", 90), record("2026-09-16T12:00:00Z", 60),
+  ], date("2026-09-16T06:00:00Z"), date("2026-09-16T18:00:00Z"), 60);
+  const peak = caffeine.findResidualPeak(points);
+  assert.equal(peak.at, "2026-09-16T12:00:00.000Z");
+  close(peak.residualMg, 60 + 90 * 0.5 ** (4 / 5));
+});
+
 test("bedtime prediction and cutoff satisfy both residual and daily budget", () => {
   const now = date("2026-09-16T08:00:00");
   const records = [record("2026-09-16T13:00:00", 100)];

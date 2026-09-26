@@ -135,6 +135,15 @@ export function calculateBedtimeResidualMg(records: readonly IntakeRecord[], set
 }
 
 /**
+ * 表示中のカーブの最大値点。摂取直後の値は sampleResidualCurve が正確にサンプルするため、
+ * その点列を最大値でreduceするだけで求まる（生の記録を再計算しない）。同値の場合は最初の点を採用する。
+ */
+export function findResidualPeak(curve: readonly CurvePoint[]): CurvePoint | null {
+  if (curve.length === 0) return null;
+  return curve.reduce((peak, point) => (point.residualMg > peak.residualMg ? point : peak));
+}
+
+/**
  * 今日の追加1杯の最終時刻。残量目標は医学的な安全閾値ではなく呼び出し側の目安。
  * 当日の既存記録（未来分も含む）で日上限を判定し、過去全期間で就寝時残量を算出。
  * 条件を満たす時刻が今日の現在以降にない場合は null。
