@@ -42,8 +42,8 @@ export interface DrinkBreakdown {
   totalMg: number;
 }
 
-/** プリセットはID、手動入力は前後の空白を除いた名前でまとめるための集計キー。 */
-function groupKey(record: Pick<IntakeRecord, "presetId" | "name">): string {
+/** プリセットはID、手動入力は前後の空白を除いた名前でまとめるための集計キー。履歴のフィルターでも再利用する。 */
+export function groupKey(record: Pick<IntakeRecord, "presetId" | "name">): string {
   return record.presetId === null ? `manual:${record.name.trim()}` : `preset:${record.presetId}`;
 }
 
