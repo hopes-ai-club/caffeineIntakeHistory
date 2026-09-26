@@ -233,10 +233,39 @@ Claudeは型定義・既存フック（`useIntakeRecords`/`useSettings`/`useNow`
 
 ---
 
+## 11. フェーズ3-4：履歴画面の実装とPR仕上げ
+
+前回のセッション以降、B担当のホームFAB接続（`feat/home-fab-intake-form-connect`、PR #9）はマージ済みで、`components/home/HomeScreen.tsx`にIntakeFormの開閉・フォーカストラップが接続された状態になっていた。今回はその状態から、moganbo0817が新たに以下の指示を出した（`/context`でのトークン使用量確認の直後）。
+
+> AGENTS.md と CLAUDE.md を読んでから、TODO.md のフェーズ3「3-4. 履歴」のみを実施してください。他のサブフェーズには着手しないでください。
+
+指示には、デザイン（`design/caffeine-log/README.md`・`Caffeine Log.dc.html`の履歴画面）への準拠、`hooks/useIntakeRecords`・`hooks/useNow`・`lib/caffeine.ts`の既存関数の再利用（フィルター用グルーピングは`groupKey`をexportして再利用）、`lib/datetime.ts`のローカル日付処理の利用、内訳・フィルターUIは「内訳の行タップで絞り込み」を基本案としその上で未設計部分を補った仕様を実装後に報告すること、削除には誤操作防止の確認ステップを入れること、完了後の`lint`/`build`/`test`確認と`TODO.md`更新、コミットはユーザー自身が行うので実装完了時点で止めて報告することが含まれていた。
+
+**作業開始前の状態確認**：Claudeはまず`git status`／`git log`を確認し、作業ディレクトリのカレントブランチが`feat/phase3-5-implement-ResidualCard`という、3-4とは無関係かつ`main`から無変更の準備用ブランチだったことに気づいた。これは別担当（C）の3-3向けに用意されたと見られる状態だったため、削除や上書きはせず、`main`から新たに`feat/phase3-4-implement-history`ブランチを作成して作業した。
+
+**実装内容**：`AGENTS.md`→`CLAUDE.md`→`TODO.md`→デザイン資料→既存コード（`lib/caffeine.ts`, `lib/datetime.ts`, `hooks/useIntakeRecords.ts`, `components/home/HomeScreen.tsx`など）の順に読み込んだ上で、`components/HistoryList.tsx` / `app/history/page.tsx`を新規実装した。主な設計判断は以下の通り。
+
+- `lib/caffeine.ts`の`groupKey`（プリセットIDまたは手動入力名でのグルーピングキー）を`export`化し、今日の内訳・フィルター・行の一致判定で共通利用。日付グルーピングは`lib/datetime.ts`の`startOfDay`/`isSameDay`を利用。
+- フィルターUIは指示どおり「今日の飲み物別内訳の行タップ」のみを絞り込み手段とした。この場合、今日は未摂取だが週内にのみ記録がある飲み物は絞り込み対象にできないという制約が生じるが、指示どおりの基本案として実装し、`TODO.md`にその制約を明記して報告する形にした。
+- 削除はデザインの「スワイプで削除パネル表示」ではなく、ヘッダーの「編集」/「完了」トグル＋各行の削除ボタン＋「本当に削除しますか？／やめる／削除する」のインライン確認という方式にした。`window.confirm`は使わずダークテーマ・アクセシビリティ・テスト容易性を優先。
+- 日付グループ見出しの日次合計は、フィルター適用中もフィルター前の実合計を表示し、行のみを絞り込む（フィルターは見せ方であり集計を変えない、という解釈）。
+- 削除失敗時は3-2で確認済みの`useIntakeRecords`書き込み失敗の挙動（フック全体が`status: "error"`になる）にそのまま従う。
+
+一時的な擬似データ（当日〜8日前、未来時刻の記録を含む）を使ってブラウザで検証し、直近1週間の表示・境界日（6日前）・表示範囲外（8日前）の除外、未来時刻レコードの除外、内訳タップでの複数日にまたがる絞り込みと解除、削除確認の「やめる」でのキャンセルと「削除する」での実削除・即時反映、読み込み失敗時のエラーバナー、空状態を確認した。`tsc`/`lint`/`test`/`build`/`git diff --check`もすべて成功を確認し、`TODO.md`3-4のチェックと実装・検証メモ（未設計部分を補った仕様5点を含む）を更新した。
+
+**削除の反映範囲についての追加確認**：ユーザーから「履歴から削除したらその日の摂取量もその分減少すること確認した？」と問われた。Claudeは履歴画面内の日次合計更新は確認済みだったが、ホーム画面の「今日の総摂取量」への反映は未確認だったことを認め、改めてホーム→履歴へSPA遷移→削除→ホームへ戻る、という一連の操作をブラウザで再現。ホームの総摂取量・カットオフ時刻・杯数が削除分だけ即座に再計算されることを確認し、`TODO.md`にも追記した。
+
+**エビデンスの整備**：ユーザーの「`docs/evidence`配下に新しくディレクトリを作成して今回作成した画面ショットを配置して」との依頼を受け、既存の`docs/evidence/home-fab-intake-form/`の形式に合わせて`docs/evidence/history-list/`を作成し、履歴一覧・内訳タップでの絞り込み・削除確認ステップの3枚のスクリーンショットとREADMEを配置した。
+
+**PRの仕上げ**：ユーザーがPRを作成した後、「PRに添える説明文を作ってほしい」との依頼を受け、概要・変更内容・検証・未完了事項の形式でPR説明文を作成（`gh`ではブランチのPRが見当たらなかったため、貼り付け用として提示）。その後「#10です、gh pr editで反映してください」との指示を受け、`gh pr view 10`でブランチ一致を確認したうえで`gh pr edit 10 --body`により実際にPR本文を更新した。続けて「evidenceの画像も貼っといて」との依頼を受け、コミット済みの`docs/evidence/history-list/`配下3枚をraw.githubusercontent.com経由でPR本文に埋め込み、再度`gh pr edit`で反映した。
+
+---
+
 ## 現時点のステータス
 
 - `CLAUDE.md`：要件定義（機能要件6項目、ユーザー体験フロー、技術要件、詳細仕様、画面構成）確定
-- `TODO.md`：フェーズ0〜7の実行計画。デザイン参照セクション・4画面構成のUIタスクを含む。フェーズ0〜2は実施済み（チェック済み）。フェーズ3のうちB担当分（3-2 記録追加フォーム、3-6 設定画面）も実施済み（チェック済み、実装・検証メモ・保存失敗挙動に関するチーム決定を記載）
+- `TODO.md`：フェーズ0〜7の実行計画。フェーズ0〜2、フェーズ3のうちB担当分（3-2 記録追加フォーム、3-6 設定画面、3-4 履歴）が実施済み（チェック済み、各実装・検証メモおよび未設計部分を補った仕様の決定事項を記載）
 - `design/caffeine-log/`：Claude Designで作成したUIデザインハンドオフ一式
-- リモートリポジトリ：https://github.com/moganbo0817/caffeineIntakeHistory （Public, `main`ブランチ）
-- 実装：フェーズ0（プロジェクトセットアップ）・フェーズ1（データモデル・ロジック層、チームメンバー`yu-75318-x`担当）・フェーズ2（カスタムフック）に加え、フェーズ3-2（`components/IntakeForm.tsx`）・3-6（`app/settings/page.tsx`, `components/settings/SettingsScreen.tsx`）まで完了（lint・build・テスト・ブラウザ検証確認済み）。ブランチ`feat/phase3-2-implement-IntakeForm`上で作業し未コミット（コミット・プッシュはユーザー自身が実施）。ホームFABからのIntakeForm接続、及びC担当分（3-3・3-4）は未着手
+- `docs/evidence/`：`home-fab-intake-form/`（ホームFAB接続、PR #9）、`history-list/`（履歴画面、PR #10）の画面エビデンス一式
+- リモートリポジトリ：https://github.com/hopes-ai-club/caffeineIntakeHistory （`main`ブランチ。個人アカウントのリポジトリからチーム組織`hopes-ai-club`のリポジトリに移行済み）
+- 実装：フェーズ0〜2、フェーズ3-2（`components/IntakeForm.tsx`）・3-6（設定画面）・ホームFAB接続（PR #9、マージ済み）・3-4（`components/HistoryList.tsx`, `app/history/page.tsx`、ブランチ`feat/phase3-4-implement-history`、PR #10としてコミット・プッシュ・PR本文整備まで完了）。C担当分（3-3 体内残量詳細、3-5 統計骨組み）は未着手。フェーズ4以降（画面統合・PWA・デプロイ）も未着手
