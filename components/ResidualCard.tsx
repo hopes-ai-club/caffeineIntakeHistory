@@ -149,7 +149,7 @@ export default function ResidualCard({ open, onClose }: ResidualCardProps) {
                   {bedtimeX !== null && (
                     <>
                       <line x1={bedtimeX} y1={0} x2={bedtimeX} y2={VB_HEIGHT} stroke="rgba(122,160,190,0.45)" strokeWidth={1} />
-                      <text x={bedtimeX} y={VB_HEIGHT - 4} textAnchor={bedtimeX > VB_WIDTH - 30 ? "end" : bedtimeX < 30 ? "start" : "middle"} fill="#7AA0BE" fontSize={10} fontFamily="IBM Plex Mono, monospace">就寝 {settings.bedtime}</text>
+                      <text x={bedtimeX} y={10} textAnchor={bedtimeX > VB_WIDTH - 30 ? "end" : bedtimeX < 30 ? "start" : "middle"} fill="#7AA0BE" fontSize={10} fontFamily="IBM Plex Mono, monospace">就寝 {settings.bedtime}</text>
                     </>
                   )}
                 </svg>
