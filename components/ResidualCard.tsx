@@ -30,15 +30,18 @@ const HEADROOM = 1.15;
 export interface ResidualCardProps {
   /** 開閉状態。閉じている間は非表示・非操作にする。 */
   open: boolean;
+  /** ホームと同じ集計時刻。省略時は共有時計を使う。 */
+  now?: Date;
   /** 閉じる操作（戻るボタン・Esc）を呼び出し側へ通知する。 */
   onClose: () => void;
 }
 
 /** 体内残量の詳細ビュー。全画面オーバーレイとしてIntakeFormと同じ開閉契約で提供する。 */
-export default function ResidualCard({ open, onClose }: ResidualCardProps) {
+export default function ResidualCard({ open, onClose, now: suppliedNow }: ResidualCardProps) {
   const intake = useIntakeRecords();
   const preferences = useSettings();
-  const now = useNow();
+  const clock = useNow();
+  const now = suppliedNow ?? clock;
 
   useEffect(() => {
     if (!open) return;

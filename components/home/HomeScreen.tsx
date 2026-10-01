@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import IntakeForm from "@/components/IntakeForm";
+import ResidualCard from "@/components/ResidualCard";
+import ResidualSummary from "@/components/home/ResidualSummary";
 import TabBar from "@/components/TabBar";
 import { useIntakeRecords } from "@/hooks/useIntakeRecords";
 import { useSettings } from "@/hooks/useSettings";
@@ -22,6 +24,10 @@ export default function HomeScreen() {
   const [addedAt, setAddedAt] = useState<Date | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [residualOpen, setResidualOpen] = useState(false);
+  const residualRef = useRef<HTMLDivElement>(null);
+  const residualTriggerRef = useRef<HTMLButtonElement>(null);
+  const closeResidual = useCallback(() => setResidualOpen(false), []);
   const formRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -33,10 +39,12 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    if (!formOpen) return;
-    const wrapper = formRef.current;
+    if (!formOpen && !residualOpen) return;
+    const wrapper = residualOpen ? residualRef.current : formRef.current;
     if (!wrapper) return;
-    const fab = fabRef.current;
+    const trigger = residualOpen ? residualTriggerRef.current : fabRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     const heading = headingRef.current;
     // フォームの階層やIDではなく、操作可能な要素だけを参照する。
     const controls = () => Array.from(wrapper.querySelectorAll<HTMLElement>(
@@ -73,9 +81,10 @@ export default function HomeScreen() {
     return () => {
       document.removeEventListener("keydown", trapFocus);
       document.removeEventListener("focusin", keepFocusInside);
-      (fab && !fab.disabled ? fab : heading)?.focus({ preventScroll: true });
+      document.body.style.overflow = previousOverflow;
+      (trigger && !trigger.disabled ? trigger : heading)?.focus({ preventScroll: true });
     };
-  }, [formOpen]);
+  }, [formOpen, residualOpen]);
 
   // 共有時計の次のtickを待たず、保存した瞬間までの記録を表示する。
   // 残量カード接続時も、この同一のnowを現在値とグラフに渡す。
@@ -110,7 +119,7 @@ export default function HomeScreen() {
 
   return (
     <>
-    <main inert={formOpen} className="mx-auto flex min-h-dvh w-full flex-col bg-bg-base px-space-20 pt-[max(60px,env(safe-area-inset-top))] min-[600px]:max-w-[420px]">
+    <main inert={formOpen || residualOpen} className="mx-auto flex min-h-dvh w-full flex-col bg-bg-base px-space-20 pt-[max(60px,env(safe-area-inset-top))] min-[600px]:max-w-[420px]">
       <header className="mb-space-22 flex flex-wrap items-baseline justify-between gap-space-8">
         <h1 ref={headingRef} tabIndex={-1} className="text-size-26 font-semibold tracking-[-0.01em]">今日</h1>
         {now && <time dateTime={now.toISOString()} className="font-mono text-size-13 text-text-tertiary">{formatDateLabel(now)}</time>}
@@ -138,6 +147,7 @@ export default function HomeScreen() {
               <p><span className="font-mono">{today.length}</span>杯</p>
             </div>
           </section>
+          <ResidualSummary records={intake.records} now={now!} dailyLimitMg={limit} triggerRef={residualTriggerRef} onOpen={() => setResidualOpen(true)} />
           <section aria-label="最後の1杯の目安" className="mt-space-14 flex items-start gap-space-12 rounded-radius-18 border border-accent/30 bg-accent/[0.10] px-space-16 py-space-14 text-size-14 text-[#EBD9C4]">
             <span aria-hidden="true" className="mt-space-5 size-space-8 shrink-0 rounded-radius-99 bg-accent" />
             <p>
@@ -184,6 +194,9 @@ export default function HomeScreen() {
     {/* readyの変化や保存失敗で下書きを失わないよう常時マウントする。 */}
     <div ref={formRef}>
       <IntakeForm open={formOpen} onClose={closeForm} />
+    </div>
+    <div ref={residualRef}>
+      <ResidualCard open={residualOpen} onClose={closeResidual} now={now ?? undefined} />
     </div>
     </>
   );
