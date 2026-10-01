@@ -30,15 +30,18 @@ const HEADROOM = 1.15;
 export interface ResidualCardProps {
   /** 開閉状態。閉じている間は非表示・非操作にする。 */
   open: boolean;
+  /** ホームと同じ集計時刻。省略時は共有時計を使う。 */
+  now?: Date;
   /** 閉じる操作（戻るボタン・Esc）を呼び出し側へ通知する。 */
   onClose: () => void;
 }
 
 /** 体内残量の詳細ビュー。全画面オーバーレイとしてIntakeFormと同じ開閉契約で提供する。 */
-export default function ResidualCard({ open, onClose }: ResidualCardProps) {
+export default function ResidualCard({ open, onClose, now: suppliedNow }: ResidualCardProps) {
   const intake = useIntakeRecords();
   const preferences = useSettings();
-  const now = useNow();
+  const clock = useNow();
+  const now = suppliedNow ?? clock;
 
   useEffect(() => {
     if (!open) return;
@@ -149,7 +152,7 @@ export default function ResidualCard({ open, onClose }: ResidualCardProps) {
                   {bedtimeX !== null && (
                     <>
                       <line x1={bedtimeX} y1={0} x2={bedtimeX} y2={VB_HEIGHT} stroke="rgba(122,160,190,0.45)" strokeWidth={1} />
-                      <text x={bedtimeX} y={VB_HEIGHT - 4} textAnchor={bedtimeX > VB_WIDTH - 30 ? "end" : bedtimeX < 30 ? "start" : "middle"} fill="#7AA0BE" fontSize={10} fontFamily="IBM Plex Mono, monospace">就寝 {settings.bedtime}</text>
+                      <text x={bedtimeX} y={10} textAnchor={bedtimeX > VB_WIDTH - 30 ? "end" : bedtimeX < 30 ? "start" : "middle"} fill="#7AA0BE" fontSize={10} fontFamily="IBM Plex Mono, monospace">就寝 {settings.bedtime}</text>
                     </>
                   )}
                 </svg>
