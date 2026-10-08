@@ -168,8 +168,14 @@ HTML/インラインスタイルはそのまま流用せず、Next.js（App Rout
 - A担当によるホーム・履歴・設定の遷移、設定変更後のホーム反映、375px・402px・1280pxでの表示整合性は確認済み（2026-09-26）。ResidualCardとの導線・表示重複も確認済み（2026-09-28）。
 
 ## フェーズ4: ページ統合
-- [ ] トップページに各コンポーネントを統合
-- [ ] レスポンシブ対応（モバイル優先レイアウト）
+- [x] トップページに各コンポーネントを統合
+- [x] レスポンシブ対応（モバイル優先レイアウト）
+
+フェーズ4 確認メモ（2026-10-07）:
+
+- 3-1（`app/page.tsx` / `components/home/HomeScreen.tsx`）の実装で、総摂取量カード・体内残量カード（`ResidualSummary`/`ResidualCard`）・最後の1杯カットオフ・きょうの記録リスト・クイック追加・`IntakeForm`・`TabBar`の統合が完了済み（PR #14 `feat/home-residual-integration` ほか）。
+- 4タブ（今日・履歴・統計・設定）すべてで共通の`main`レイアウト（`px-space-20`・`pt-[max(60px,env(safe-area-inset-top))]`・`min-[600px]:max-w-[420px]`）と`TabBar`を使用しモバイル優先レイアウトで統一（PR #13 `fix/home-navigation-responsive`、3-1検証済み項目で375px・402px・1280pxの表示整合性を確認済み）。
+- 上限接近警告の仕様・統計画面実装後の最終デザイン比較は3-1の「残作業」として別管理のため、本フェーズの対象外。
 
 ## フェーズ5: PWA対応
 - [ ] `manifest.json` の作成
