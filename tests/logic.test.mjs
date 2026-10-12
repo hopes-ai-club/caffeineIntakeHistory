@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 const load = (path) => require(join(process.env.LOGIC_BUILD_DIR, path));
 const caffeine = load("lib/caffeine.js");
 const datetime = load("lib/datetime.js");
+const stats = load("lib/stats.js");
 const storage = load("lib/storage.js");
 const { PRESETS } = load("data/presets.js");
 const date = (value) => new Date(value);
@@ -144,6 +145,109 @@ test("quick add candidates rank by 7-day frequency, break ties by recency and us
   ]);
   assert.equal(caffeine.getQuickAddCandidates(records, now, 0).length, 0);
   assert.equal(caffeine.getQuickAddCandidates([], now).length, 0);
+});
+
+test("stats periods use inclusive local calendar days and exclude records outside the current instant", () => {
+  const now = date("2026-09-16T12:00:00");
+  const records = [
+    record("2026-08-17T23:59:59", 1), // 1か月の開始より前
+    record("2026-08-18T00:00:00", 10), // 1か月の開始ちょうど
+    record("2026-06-19T00:00:00", 20), // 3か月の開始ちょうど
+    record("2020-01-01T08:00:00", 30),
+    record("2026-09-16T12:00:00", 40), // 現在時刻ちょうど
+    record("2026-09-16T12:00:01", 80), // 未来
+  ];
+
+  const month = stats.calculateStats(records, "month", 400, now);
+  assert.equal(datetime.toDatetimeLocal(month.range.start), "2026-08-18T00:00");
+  assert.equal(month.range.dayCount, 30);
+  assert.equal(month.totalMg, 50);
+  assert.equal(month.recordCount, 2);
+  assert.equal(month.trend.length, 30);
+
+  const quarter = stats.calculateStats(records, "quarter", 400, now);
+  assert.equal(datetime.toDatetimeLocal(quarter.range.start), "2026-06-19T00:00");
+  assert.equal(quarter.range.dayCount, 90);
+  assert.equal(quarter.totalMg, 71);
+
+  const all = stats.calculateStats(records, "all", 400, now);
+  assert.equal(datetime.toDatetimeLocal(all.range.start), "2020-01-01T00:00");
+  assert.equal(all.totalMg, 101);
+  assert.equal(all.recordCount, 5);
+});
+
+test("stats calculate averages, strict limit days, drink groups and stable ordering without mutation", () => {
+  const now = date("2026-09-16T12:00:00");
+  const records = [
+    record("2026-09-14T08:00:00", 400, { presetId: "coffee", name: "コーヒー" }),
+    record("2026-09-15T08:00:00", 200, { presetId: null, name: " コーヒー " }),
+    record("2026-09-15T09:00:00", 201, { presetId: null, name: "コーヒー" }),
+    record("2026-09-16T10:00:00", 50, { presetId: "tea", name: "紅茶" }),
+    record("2026-09-16T11:00:00", 50, { presetId: "green-tea", name: "緑茶" }),
+  ];
+  const before = JSON.stringify(records);
+  const result = stats.calculateStats(records, "month", 400, now);
+
+  assert.equal(result.totalMg, 901);
+  assert.equal(result.averageDailyMg, 901 / 30);
+  assert.equal(result.overLimitDays, 1); // 400mgと同値の日は含めない
+  assert.deepEqual(result.drinks.map((item) => [item.key, item.count, item.totalMg]), [
+    ["manual:コーヒー", 2, 401],
+    ["preset:coffee", 1, 400],
+    ["preset:tea", 1, 50],
+    ["preset:green-tea", 1, 50],
+  ]);
+  assert.equal(result.trend.at(-1).totalMg, 100);
+  assert.equal(JSON.stringify(records), before);
+});
+
+test("weekly stats start on Monday and keep partial edge weeks inside the selected range", () => {
+  const now = date("2026-09-16T12:00:00"); // 水曜日
+  const result = stats.calculateStats([
+    record("2026-06-19T10:00:00", 10), // 金曜日（期間の先頭）
+    record("2026-06-22T10:00:00", 20), // 月曜日
+    record("2026-09-16T10:00:00", 30),
+  ], "quarter", 400, now);
+
+  assert.equal(result.trendGranularity, "week");
+  assert.equal(datetime.toDatetimeLocal(result.trend[0].start), "2026-06-19T00:00");
+  assert.equal(datetime.toDatetimeLocal(result.trend[0].end), "2026-06-21T00:00");
+  assert.equal(result.trend[0].totalMg, 10);
+  assert.equal(datetime.toDatetimeLocal(result.trend[1].start), "2026-06-22T00:00");
+  assert.equal(result.trend[1].totalMg, 20);
+  const last = result.trend.at(-1);
+  assert.equal(datetime.toDatetimeLocal(last.start), "2026-09-14T00:00");
+  assert.equal(datetime.toDatetimeLocal(last.end), "2026-09-16T00:00");
+  assert.equal(last.totalMg, 30);
+});
+
+test("stats handle empty and future-only data without inventing an all-time range", () => {
+  const now = date("2026-09-16T12:00:00");
+  for (const records of [[], [record("2026-09-16T12:00:01", 100)]]) {
+    const result = stats.calculateStats(records, "all", 400, now);
+    assert.equal(result.recordCount, 0);
+    assert.equal(result.totalMg, 0);
+    assert.equal(result.averageDailyMg, 0);
+    assert.equal(result.range.dayCount, 1);
+    assert.equal(datetime.toDatetimeLocal(result.range.start), "2026-09-16T00:00");
+    assert.deepEqual(result.drinks, []);
+  }
+});
+
+test("stats keep every local calendar day across DST changes", () => {
+  const now = date("2026-03-10T12:00:00");
+  const result = stats.calculateStats([], "month", 400, now);
+  assert.equal(result.range.dayCount, 30);
+  assert.equal(result.trend.length, 30);
+  assert.equal(new Set(result.trend.map((point) => datetime.toDatetimeLocal(point.start).slice(0, 10))).size, 30);
+  assert.equal(datetime.toDatetimeLocal(result.trend.at(-1).start), "2026-03-10T00:00");
+  if (process.env.TZ === "America/New_York") {
+    const march8 = result.trend.find((point) => datetime.toDatetimeLocal(point.start).startsWith("2026-03-08"));
+    const march9 = result.trend.find((point) => datetime.toDatetimeLocal(point.start).startsWith("2026-03-09"));
+    assert.ok(march8);
+    assert.ok(march9);
+    assert.equal((march9.start - march8.start) / 3_600_000, 23);
+  }
 });
 
 test("local datetime roundtrip, formatting, invalid calendar dates and bedtime", () => {
