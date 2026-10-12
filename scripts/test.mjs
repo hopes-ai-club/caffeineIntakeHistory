@@ -8,7 +8,7 @@ const output = mkdtempSync(join(tmpdir(), "caffeine-tests-"));
 try {
   const compile = spawnSync(process.execPath, ["node_modules/typescript/bin/tsc",
     "--outDir", output, "--module", "commonjs", "--target", "ES2020", "--strict", "--skipLibCheck",
-    "lib/caffeine.ts", "lib/datetime.ts", "lib/storage.ts", "data/presets.ts",
+    "lib/caffeine.ts", "lib/datetime.ts", "lib/stats.ts", "lib/storage.ts", "data/presets.ts",
   ], { stdio: "inherit" });
   if (compile.error) throw compile.error;
   if (compile.status !== 0) process.exitCode = compile.status ?? 1;
