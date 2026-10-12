@@ -299,11 +299,53 @@ moganbo0817から、`TODO.md`のフェーズ3「3-3. 体内残量（詳細）」
 
 ---
 
+## 13. フェーズ4の要否確認・GitHub Project連携・フェーズ5（PWA対応）の実装
+
+**フェーズ4「トップページに各コンポーネントを統合」の要否確認**
+
+ユーザー: 「今のコードでTODOの４のトップページに各コンポーネントを統合ってやる必要あるか考えてほしい」
+
+Claudeは`components/home/HomeScreen.tsx`とTODO.mdのgit履歴を確認し、Home用の各部品（IntakeForm・ResidualCard・ResidualSummary）はすでに全部統合済みであること、この項目はデザインハンドオフ取り込み前（`175973e`より前）に書かれた汎用プレースホルダーで、後に3-1側のタスクとして具体化・完了済みであることを報告した。レスポンシブ対応の項目も3-1の残タスクと内容が重複している旨をあわせて伝えた。
+
+**PWA対応（フェーズ5）の内容説明**
+
+ユーザー: 「PWA対応ってどんな対応？」
+
+Claudeは`TODO.md`の4項目（manifest.json作成・アイコン作成・Service Worker作成・layout.tsxへの反映）の意味を説明し、現状は完全に未着手であることを確認して伝えた。
+
+**GitHub Project自動連携（Issue #18・#23）**
+
+ユーザーから「ISSUEを立てたい、起票すると自動でcaffeineIntakeHistoryに紐づけられるようなもの」と相談され、Claudeは既存のProjects設定を確認しようとしたが、トークンに`read:project`スコープがなく直接確認できなかった。候補（GitHub Projectsの「Auto-add」workflow／Issueテンプレート／対応不要）を整理して提示したところ、ユーザーから「プロジェクトはすでにある」（Project #2）と、続けて「今回の作業をすぐやってほしいわけではなく、そういう作業をするIssueを立てたい」との依頼があり、Project #2へのリンク・Auto-add Workflow有効化・既存Issue追加をタスク化したIssue #23を起票した。
+
+後日ユーザーから「起票してもらったISSUEはプロジェクトに紐づいていた」と報告があり、Claudeは`gh issue create`に`--project`オプションを使っておらず該当スコープもないことから、Auto-addが起票前から既に有効だったと結論づけた。Workflow一覧に並ぶ項目が既定搭載かどうかの質疑にも回答した。
+
+**フェーズ5：PWA対応の実装**
+
+moganbo0817から実施の意向が示され、Claudeは実装前の確認観点（アイコンサイズ・モチーフ、manifest内容、Service Worker実装方針、検証方法、手続き面）を整理して提示した。
+
+ユーザーの回答を受けて以下が決まった。
+
+- アイコン: サイズの詳細説明（192×192 any・512×512 any・512×512 maskable＝中心80%セーフゾーン必須・180×180 Apple touch icon）を行ったうえで、モチーフは既存のトンマナ（ダーク`#17130F`＋アクセントオレンジ`#E8913F`）でよいとの回答を受け、Claudeがマグカップ＋湯気のSVGアイコンを作成し、Next.js付随で`node_modules`に入っていた`sharp`を一時的な変換ツールとして使いPNGへ書き出した（プロジェクトの依存には追加していない）
+- manifest: `short_name`は「カフェインログ」で確定
+- Service Worker実装方針: 当初`@ducanh2912/next-pwa`の利用を提案したが、ユーザーから「技術負債にならないか心配」との懸念が示され、Claudeは「Next.jsのハッシュ化ファイル名を事前列挙するプリキャッシュ」が本当に必要かを再検討。実際には「読み込んだものをその場でキャッシュする」ランタイムキャッシュ方式で要件を満たせると判断し、新規ライブラリなしの手書きService Workerへ方針転換を提案してユーザーが承認した
+- iPhoneについての質問には、maskableアイコンはiOSでは無視されること、`apple-touch-icon`は正方形・透過なしで渡すべきことなどを回答した
+
+実装は、`CLAUDE.md`に新たに追加されていた「開発ワークフロー」（ブランチ作成・コミット・push・PRは`git-workflow` Skillを使用）の指定に従い、`git-workflow` Skillを起動して手順を確認。クリーンな`main`から`feat/phase5-pwa-support`ブランチを作成し、`public/icons/`（アイコン4種＋SVGソース）・`public/manifest.json`・`public/sw.js`・`components/ServiceWorkerRegistration.tsx`・`app/layout.tsx`（manifest・アイコン・`viewport`経由の`theme_color`・`appleWebApp`メタ情報）を実装した。
+
+ブラウザでの検証中、`apple-mobile-web-app-capable`タグが見当たらないと一度指摘したが、context7でNext.jsの実装を確認したところ実際には標準名`mobile-web-app-capable`で出力される仕様だったため、確認方法の誤りと判明し訂正した。Service Workerの登録（`activated`・`controller`設定）、ランタイムキャッシュへの保存、`next start`サーバーを実際に停止した状態でのオフライン動作（アプリシェルがそのまま表示されること）を確認し、未キャッシュルートへの直接アクセス時はキャッシュ済みのホーム画面にフォールバックするという既知の挙動もあわせて報告した。
+
+ユーザーの「アイコンとか画像で確認できるものはエビデンス作成し」との依頼を受け、`docs/evidence/pwa-support/`にアイコン一覧・オンライン起動・オフライン起動の3枚とREADMEを作成した（検証用の一時プレビューは`public/`直下に置いた静的HTMLが`next start`に反映されない事象に遭遇したため、既存の慣例どおり`app/`配下の一時ルートに切り替えて解決し、確認後に削除した）。
+
+`git-workflow` Skillの手順（変更前確認→検証→コミット前確認→push→PR前確認）に従い、`npx tsc --noEmit`/`npm run lint`/`npm test`/`npm run build`/`git diff --check`の成功を確認したうえでユーザーの承認を得てコミット・push、PR本文（概要・変更内容・画面エビデンス・検証・未検証事項）を提示してユーザーの2回目の承認を得てPR #25を作成した。
+
+---
+
 ## 現時点のステータス
 
-- `CLAUDE.md`：要件定義（機能要件6項目、ユーザー体験フロー、技術要件、詳細仕様、画面構成）確定
-- `TODO.md`：フェーズ0〜7の実行計画。フェーズ0〜2、フェーズ3のうちB担当分（3-2 記録追加フォーム、3-6 設定画面、3-4 履歴）に加え、3-3（体内残量詳細、本来C担当分だがmoganbo0817がClaudeに直接依頼）まで実施済み（チェック済み、各実装・検証メモおよび未設計部分を補った仕様の決定事項を記載）
+- `CLAUDE.md`：要件定義（機能要件6項目、ユーザー体験フロー、技術要件、詳細仕様、画面構成）に加え、開発ワークフロー（ブランチ・コミット・push・PRは`git-workflow` Skillを使用）を追記済み
+- `TODO.md`：フェーズ0〜7の実行計画。フェーズ0〜2、フェーズ3のうちB担当分（3-2 記録追加フォーム、3-6 設定画面、3-4 履歴）・3-3（体内残量詳細、本来C担当分だがmoganbo0817がClaudeに直接依頼）に加え、フェーズ4は実質完了済み（3-1側のタスクとして吸収）と整理。フェーズ5（PWA対応）はPR #25として実装・提出済み
 - `design/caffeine-log/`：Claude Designで作成したUIデザインハンドオフ一式
-- `docs/evidence/`：`home-fab-intake-form/`（ホームFAB接続、PR #9）、`history-list/`（履歴画面、PR #10）、`residual-card/`（体内残量詳細、PR #11）の画面エビデンス一式
+- `docs/evidence/`：`home-fab-intake-form/`（ホームFAB接続、PR #9）、`history-list/`（履歴画面、PR #10）、`residual-card/`（体内残量詳細、PR #11）、`pwa-support/`（PWA対応、PR #25）の画面エビデンス一式
+- GitHub Project: `hopes-ai-club`組織のProject #2（`caffeineIntakeHistory`のIssueをAuto-addするWorkflowが設定済み）。Issue #18（履歴の摂取時刻編集機能）・#23（Project連携の作業整理、内容的には既に満たされている可能性が高く要クローズ判断）
 - リモートリポジトリ：https://github.com/hopes-ai-club/caffeineIntakeHistory （`main`ブランチ。個人アカウントのリポジトリからチーム組織`hopes-ai-club`のリポジトリに移行済み）
-- 実装：フェーズ0〜2、フェーズ3-2（`components/IntakeForm.tsx`）・3-6（設定画面）・ホームFAB接続（PR #9、マージ済み）・3-4（`components/HistoryList.tsx`, `app/history/page.tsx`、PR #10として`main`にマージ済み）・3-3（`components/ResidualCard.tsx`, `lib/caffeine.ts`の`findResidualPeak`、PR #11としてコミット・プッシュ済み、baseは`main`）。3-3は`ResidualCard`単体の実装までで、ホーム（3-1）側からの接続・開閉は未着手。PR #11は当初PR #10の先端から作成され3-4の変更が混入していたため、`main`へrebase＋force-pushし直し、baseも`main`へ変更済み（3-4分のコミットは本ブランチの履歴から除去済み）。C担当の残り（3-5 統計骨組み）とフェーズ4以降（画面統合・PWA・デプロイ）も未着手
+- 実装：フェーズ0〜2、フェーズ3-2（`components/IntakeForm.tsx`）・3-6（設定画面）・ホームFAB接続（PR #9）・3-4（履歴、PR #10）・3-3（`components/ResidualCard.tsx`、PR #11）・ホームへの残量カード統合（`components/home/ResidualSummary.tsx`、PR #14、別メンバー実装）・フェーズ5 PWA対応（`public/manifest.json`・`public/sw.js`・アイコン一式、PR #25、本セッション）まで、いずれも`main`にマージ済み、またはマージ待ちのPRとして提出済み。C担当の残り（3-5 統計骨組み、`/stats`ルートは別メンバーにより着手済みの様子）とフェーズ4（画面統合の最終デザイン比較）・フェーズ6〜7（QA・デプロイ）は未着手
