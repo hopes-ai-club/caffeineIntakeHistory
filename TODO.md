@@ -178,10 +178,17 @@ HTML/インラインスタイルはそのまま流用せず、Next.js（App Rout
 - 上限接近警告の仕様・統計画面実装後の最終デザイン比較は3-1の「残作業」として別管理のため、本フェーズの対象外。
 
 ## フェーズ5: PWA対応
-- [ ] `manifest.json` の作成
-- [ ] アプリアイコン画像の作成
-- [ ] サービスワーカーの作成とアプリシェルのキャッシュ対応
-- [ ] `layout.tsx` にmanifest・アイコン・テーマカラーのメタデータを設定
+- [x] `manifest.json` の作成
+- [x] アプリアイコン画像の作成
+- [x] サービスワーカーの作成とアプリシェルのキャッシュ対応
+- [x] `layout.tsx` にmanifest・アイコン・テーマカラーのメタデータを設定
+
+フェーズ5 完了確認メモ（2026-10-15、対象コミット `7212ab5`）:
+
+- macOS 26.6.2、Google Chrome 155.0.8059.40、Node.js v22.23.2で検証。manifestの構文と設定値、PNGアイコン4種の形式・寸法・参照先、サービスワーカーの構文・登録処理・キャッシュ処理を確認した。
+- `npm run build`後の本番サーバーで、生成HTMLにmanifest、512pxアイコン、Apple touch icon、テーマカラーが反映され、`/sw.js`が`activated`状態でページを制御することを確認した。
+- Service Worker制御下でオンライン再読み込み後、`caffeine-log-shell-v1`にホームを含む14リクエストが保存された。本番サーバーを停止して接続不能を確認した後も、再読み込みでホーム画面が表示された。
+- `npx tsc --noEmit`、`npm run lint`、`npm test`（Asia/Tokyo・America/New_Yorkで各17件）、`npm run build`、`git diff --check`が成功。実端末へのインストール操作は未検証だが、フェーズ5およびIssue #32の完了条件には含まれない。
 
 ## フェーズ6: 動作確認・品質チェック
 - [ ] TypeScript型チェック（`tsc --noEmit`）
