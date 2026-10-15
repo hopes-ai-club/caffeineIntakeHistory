@@ -68,3 +68,22 @@
 | 根拠コミット | `f7c2300` — feat: add period-based caffeine statistics |
 | Issue | [#17 — 統計：1か月・3か月・全期間で摂取傾向を確認できるようにする](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/17) |
 | PR | [#30 — feat: 期間別のカフェイン摂取統計を追加](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/30) |
+
+### 2026-10-15 — フェーズ5（PWA対応）の完了検証
+
+| 項目 | 内容 |
+|---|---|
+| 日付 | 2026-10-15 |
+| 工程 | 調査／テスト／文書化 |
+| ツール | Codex（Chrome・DevTools Protocolによるブラウザ検証を含む） |
+| タスク概要 | Issue #32に基づき、最新の`main`（`7212ab5`）を対象にフェーズ5のPWA対応を再検証した。manifest、アプリアイコン、Service Worker、生成HTMLのメタデータ、アプリシェルのキャッシュ、サーバー停止後のオフライン再読み込みを確認し、全項目が完了条件を満たしたため`TODO.md`の4項目を完了状態へ更新して検証メモを追記した。作業ブランチ`chore/verify-pwa-phase5`でコミット・pushし、PR #33を作成した。 |
+| 採用状況 | 採用（PR #33としてレビュー待ち） |
+| プロンプトの要点 | Issue #32の作業として、PWA対応の各成果物をコードと本番ビルドのブラウザ動作で検証し、全項目を確認できた場合のみ`TODO.md`を更新するよう依頼された。Git操作ではプロジェクトの`git-workflow` Skillに従い、コミット前の承認を得て対象ファイルだけをコミット・pushした。その後、今回の作業内容をAI活用ログへ追記するよう追加指示を受けた。 |
+| 手戻り・誤り | 通常のブラウザ自動操作環境では安全上の隔離によりService Worker APIが利用できず、登録状態を直接確認できなかった。そこで通常環境と分離した一時Chromeプロファイルを起動し、DevTools Protocol経由で検証した。初回のオンライン表示はService Worker登録直後でキャッシュが空だったため、Service Worker制御下で通常再読み込みを行い、キャッシュ生成後にサーバーを停止してオフライン表示を確認した。 |
+| 所要時間 | AIありの実測時間: 約10分／AIなしの見積時間: 30分 |
+| 学び | Service Workerは初回表示時に登録されても、その初回ナビゲーションを制御しておらずアプリシェルがまだキャッシュされていない場合がある。登録・有効化だけで完了とせず、制御下で再読み込みしてCache Storageの内容を確認し、サーバーを実際に停止した状態で再読み込みすると、オフライン動作を再現性高く検証できる。 |
+| 実施した検証 | manifestのJSON構文と設定値、PNGアイコン4種の形式・寸法・参照先、`public/sw.js`の構文とキャッシュ処理、生成HTMLのmanifest・512pxアイコン・Apple touch icon・テーマカラーを確認した。Chrome 155で`/sw.js`が`activated`状態かつページを制御し、`caffeine-log-shell-v1`にホームを含む14リクエストが保存されることを確認した。本番サーバー停止後に接続不能を確認してから再読み込みし、ホーム画面が表示された。`npx tsc --noEmit`、`npm run lint`、`npm test`（Asia/Tokyo・America/New_Yorkで各17件）、`npm run build`、`git diff --check`も成功した。 |
+| 未検証事項 | 実端末へのPWAインストール操作は未検証。Issue #32の完了条件には含まれない。 |
+| 根拠コミット | `3370018` — docs: mark PWA phase complete after verification |
+| Issue | [#32 — フェーズ5（PWA対応）の完了状況を検証しTODO.mdを更新する](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/32) |
+| PR | [#33 — docs: PWA対応の完了検証結果を記録](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/33) |
