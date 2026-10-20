@@ -66,6 +66,19 @@ test("today uses local midnight, excludes future and groups manual names separat
   assert.equal(JSON.stringify(records), before);
 });
 
+test("limit warning distinguishes the 100mg boundary, reached limit and exceeded limit", () => {
+  assert.equal(caffeine.LIMIT_WARNING_REMAINING_MG, 100);
+  assert.equal(caffeine.getLimitWarningStatus(300, 400), null);
+  assert.equal(caffeine.getLimitWarningStatus(301, 400), "approaching");
+  assert.equal(caffeine.getLimitWarningStatus(399, 400), "approaching");
+  assert.equal(caffeine.getLimitWarningStatus(400, 400), "reached");
+  assert.equal(caffeine.getLimitWarningStatus(401, 400), "exceeded");
+  assert.equal(caffeine.getLimitWarningStatus(51, 150), "approaching");
+  assert.equal(caffeine.getLimitWarningStatus(51, 200), null);
+  assert.throws(() => caffeine.getLimitWarningStatus(-1, 400), RangeError);
+  assert.throws(() => caffeine.getLimitWarningStatus(0, -1), RangeError);
+});
+
 test("curve keeps pre-range residual, off-grid jumps and inclusive endpoint", () => {
   const points = caffeine.sampleResidualCurve([
     record("2026-09-16T03:00:00Z"), record("2026-09-16T08:02:00Z", 60),
