@@ -340,12 +340,41 @@ moganbo0817から実施の意向が示され、Claudeは実装前の確認観点
 
 ---
 
+## 14. フェーズ7：Issue #28（Vercelデプロイ）の対応と本番公開
+
+本セッション開始時点で、フェーズ3のUI残作業（Issue #26）・フェーズ6の総合動作確認（Issue #27）・フェーズ7のVercelデプロイ（Issue #28）がオープンな状態で、統計機能はPR #30として別メンバーによりマージ済みだった。moganbo0817から「着手順は#28からやってもいいと思う」との方針が示され、Issue #28本文の内容を確認した上で、以下2点を検討軸として整理した。
+
+1. どのVercelアカウントを使うか（個人アカウント／チーム共有アカウント）
+2. Vercel側での「プロジェクトをインポートする」操作が具体的に何を指すか、それ自体がCD（継続的デプロイ）設定になっているという理解の確認
+
+Claudeは、GitHubリポジトリのインポート（GitHub Appの連携）そのものが`main`へのpushでの本番デプロイ・他ブランチ／PRでのプレビューデプロイを自動化する仕組みである、という理解をユーザーと一つずつ確認し、合意を得た上でIssue #28に次の内容をコメントとして追記した（本文自体は書き換えず、`gh issue comment`で補足情報として追加）。
+
+- 使用するVercelアカウントの検討（現状は個人アカウント想定、チーム共有に切り替える場合は事前合意が必要）
+- Vercel側のプロジェクトインポート＝GitHub連携自体がCD設定であること、"Only select repositories"でのスコープ限定推奨
+- 「GitHub Actionsは別途必要か」という質問への回答：Vercelの自動ビルド・デプロイ（`next build`含む）だけで完結するため追加のワークフローは不要。ただし`npm test`/`npm run lint`をPRの必須チェックにしたい場合は別目的のCIとして別途検討（本Issueの対象外）
+
+**実際のデプロイ作業の進行サポート**：ユーザーが実際にVercelへログインし、GitHubとの連携を進める中で複数の質疑があった。
+
+- New Projectの設定画面でどの項目を変更すべきか → `package.json`を確認した上で、Framework Preset・Build Command・Output Directory・Install Commandはすべてデフォルトのまま、環境変数の追加も不要（本アプリはlocalStorageのみでサーバー/DB/APIキーを使わないため）と回答
+- GitHub側での連携許可の操作方法、リポジトリが組織（`hopes-ai-club`）配下にあるため個人アカウントではなく組織に対する許可が必要になりうる点、組織Owner以外が操作すると「リクエスト送信」扱いになり組織Owner側の承認（`Settings → Third-party Access → GitHub Apps`）が必要になる点を説明
+- 実際に「リクエスト送信」表示になったとの報告を受け、組織のOwnerが誰かを`github.com/orgs/hopes-ai-club/people`で確認し、Ownerに承認を依頼する、という次の動きを案内
+- Vercel Hobbyプラン（無料プラン）のプロジェクト数上限について質問があり、Web検索で現行の制限（200プロジェクトまで、1日100デプロイまで、個人・非商用利用限定）を確認して回答
+- Vercelで「To link a GitHub repository, you need to install the GitHub integration first.」というエラーが出た際は、GitHub App連携がまだ組織側で承認されていない可能性が高いと判断し、`github.com/settings/installations`・組織側の承認状況の確認手順を案内
+
+**本番公開完了・README更新・PR #34**：承認が完了しVercelへのプロジェクトインポート・デプロイが成功し、本番URL `https://caffeine-intake-history.vercel.app/` が発行された。ユーザーから「READMEをどう更新するか」と相談を受け、Claudeは`README.md`冒頭（使用技術セクションの直前）に「本番環境」セクションを追加する案を提示し、本番URL・`main`へのpush連動の自動デプロイである旨・localStorageが端末/ブラウザ依存である旨を記載した。ユーザーの承認を得て、`git-workflow` Skillの手順（状態確認→ドキュメントのみの変更のため`git diff --check`での検証→コミット前確認→push→PR前確認）に従い、`docs/readme-production-url`ブランチで`README.md`の変更をコミット・push、PR #34（`docs: add production URL to README`、Issue #28に関連付け）を作成した。あわせてIssue #28にも本番URLと「READMEにも追記済み」である旨をコメントで記録した。
+
+この時点でIssue #28の「対応内容」のうち、プロジェクトインポート・ビルド成功・本番URL記録は完了。「本番環境での確認」（各画面の表示・機能動作・localStorage永続化・manifest/Service Worker・PWAインストール・オフライン起動・ログ確認）は未着手。
+
+---
+
 ## 現時点のステータス
 
-- `CLAUDE.md`：要件定義（機能要件6項目、ユーザー体験フロー、技術要件、詳細仕様、画面構成）に加え、開発ワークフロー（ブランチ・コミット・push・PRは`git-workflow` Skillを使用）を追記済み
-- `TODO.md`：フェーズ0〜7の実行計画。フェーズ0〜2、フェーズ3のうちB担当分（3-2 記録追加フォーム、3-6 設定画面、3-4 履歴）・3-3（体内残量詳細、本来C担当分だがmoganbo0817がClaudeに直接依頼）に加え、フェーズ4は実質完了済み（3-1側のタスクとして吸収）と整理。フェーズ5（PWA対応）はPR #25として実装・提出済み
+- `CLAUDE.md`：要件定義（機能要件6項目、ユーザー体験フロー、技術要件、詳細仕様、画面構成）に加え、開発ワークフロー（ブランチ・コミット・push・PRは`git-workflow` Skillを使用）、統計画面の詳細仕様（期間切り替え・集計ルール）を追記済み
+- `TODO.md`：フェーズ0〜7の実行計画。フェーズ0〜2、フェーズ3のうちB担当分（3-2 記録追加フォーム、3-6 設定画面、3-4 履歴）・3-3（体内残量詳細、本来C担当分だがmoganbo0817がClaudeに直接依頼）に加え、フェーズ4は実質完了済み（3-1側のタスクとして吸収）と整理。フェーズ5（PWA対応）はPR #25としてマージ済み。統計機能（3-5）は他メンバーによりPR #30として実装・マージ済み。フェーズ7（Vercelデプロイ）はIssue #28として対応中、本番URL発行済み
 - `design/caffeine-log/`：Claude Designで作成したUIデザインハンドオフ一式
 - `docs/evidence/`：`home-fab-intake-form/`（ホームFAB接続、PR #9）、`history-list/`（履歴画面、PR #10）、`residual-card/`（体内残量詳細、PR #11）、`pwa-support/`（PWA対応、PR #25）の画面エビデンス一式
-- GitHub Project: `hopes-ai-club`組織のProject #2（`caffeineIntakeHistory`のIssueをAuto-addするWorkflowが設定済み）。Issue #18（履歴の摂取時刻編集機能）・#23（Project連携の作業整理、内容的には既に満たされている可能性が高く要クローズ判断）
-- リモートリポジトリ：https://github.com/hopes-ai-club/caffeineIntakeHistory （`main`ブランチ。個人アカウントのリポジトリからチーム組織`hopes-ai-club`のリポジトリに移行済み）
-- 実装：フェーズ0〜2、フェーズ3-2（`components/IntakeForm.tsx`）・3-6（設定画面）・ホームFAB接続（PR #9）・3-4（履歴、PR #10）・3-3（`components/ResidualCard.tsx`、PR #11）・ホームへの残量カード統合（`components/home/ResidualSummary.tsx`、PR #14、別メンバー実装）・フェーズ5 PWA対応（`public/manifest.json`・`public/sw.js`・アイコン一式、PR #25、本セッション）まで、いずれも`main`にマージ済み、またはマージ待ちのPRとして提出済み。C担当の残り（3-5 統計骨組み、`/stats`ルートは別メンバーにより着手済みの様子）とフェーズ4（画面統合の最終デザイン比較）・フェーズ6〜7（QA・デプロイ）は未着手
+- GitHub Project: `hopes-ai-club`組織のProject #2（`caffeineIntakeHistory`のIssueをAuto-addするWorkflowが設定済み）
+- オープンIssue：#29（履歴の表示期間拡張）・#28（Vercelデプロイ、本番URL発行済み・本番環境での確認が未着手）・#27（フェーズ6QA、#28の前提）・#26（フェーズ3のUI残作業）・#18（履歴の摂取時刻編集）・#16（手動入力の飲み物名・カフェイン量追加）
+- 本番環境：https://caffeine-intake-history.vercel.app/ （`main`へのpush連動でVercelが自動ビルド・デプロイ。PR #34でREADMEに記載、マージ待ち）
+- リモートリポジトリ：https://github.com/hopes-ai-club/caffeineIntakeHistory （`main`ブランチ）
+- 実装：フェーズ0〜2、フェーズ3-2（`components/IntakeForm.tsx`）・3-6（設定画面）・ホームFAB接続（PR #9）・3-4（履歴、PR #10）・3-3（`components/ResidualCard.tsx`、PR #11）・ホームへの残量カード統合（PR #14、別メンバー実装）・フェーズ5 PWA対応（PR #25）・統計機能（PR #30、別メンバー実装）まで`main`にマージ済み。フェーズ6（QA、#27）は未着手。フェーズ7（Vercelデプロイ、#28）は本番公開まで完了、本番環境での機能・PWA確認が残タスク

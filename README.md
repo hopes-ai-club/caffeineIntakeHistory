@@ -4,6 +4,12 @@
 
 記録と設定はブラウザの `localStorage` に保存します。サーバーやデータベースは使用しません。
 
+## 本番環境
+
+https://caffeine-intake-history.vercel.app/
+
+`main` ブランチへのpushに連動してVercelが自動でビルド・デプロイします（GitHub連携によるCD設定）。記録・設定はアクセスしたブラウザの `localStorage` に保存されるため、ブラウザや端末が変わると共有されません。
+
 ## 主な使用技術
 
 - Next.js（App Router）
