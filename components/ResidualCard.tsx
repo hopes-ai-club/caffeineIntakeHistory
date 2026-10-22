@@ -7,7 +7,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { useNow } from "@/hooks/useNow";
 import {
   HALF_LIFE_HOURS, calculateResidualMg, sampleResidualCurve, findResidualPeak,
-  calculateBedtimeResidualMg, calculateLastCupTime,
+  calculateBedtimeResidualMg, getLastCupTimeResult, type LastCupTimeResult,
 } from "@/lib/caffeine";
 import { formatTime, getBedtime, startOfDay } from "@/lib/datetime";
 
@@ -16,6 +16,15 @@ const displayMg = (mg: number) => Math.round(mg).toLocaleString("ja-JP");
 /** ホームのカットオフ・バナーと同じ仮設定（追加1杯・就寝時残量目標）。lib側の計算は再利用するが、定数はHome（3-1）側が非exportのため複製する。 */
 const CUTOFF_CUP_MG = 90;
 const CUTOFF_TARGET_MG = 50;
+
+function unavailableCutoffMessage(result: Extract<LastCupTimeResult, { status: "unavailable" }>, dailyLimitMg: number): string {
+  switch (result.reason) {
+    case "bedtime-passed": return "今日の就寝時刻を過ぎています。これからのカフェイン摂取は控えるのがおすすめです。";
+    case "daily-limit-exceeded": return `これから${CUTOFF_CUP_MG}mg以上のカフェインを摂取すると、今日の摂取量が設定上限の${dailyLimitMg}mgを超過します。`;
+    case "bedtime-target-reached": return `現時点で、就寝時の推定残量は目標の${CUTOFF_TARGET_MG}mg以上です。今日は追加の摂取を控えるのがおすすめです。`;
+    case "cutoff-passed": return `就寝時の推定残量が${CUTOFF_TARGET_MG}mg以下となる目安摂取時刻を過ぎています。`;
+  }
+}
 /** カーブの表示範囲。ホーム・詳細で共通の仕様（当日06:00〜翌日02:00、5分刻み）。 */
 const CURVE_START_HOUR = 6;
 const CURVE_END_HOUR = 26;
@@ -66,7 +75,7 @@ export default function ResidualCard({ open, onClose, now: suppliedNow }: Residu
   const current = ready ? calculateResidualMg(records, now!) : 0;
   const bedtime = ready ? getBedtime(now!, settings.bedtime) : null;
   const bedtimeResidual = ready ? calculateBedtimeResidualMg(records, settings, now!) : 0;
-  const cutoff = ready ? calculateLastCupTime(records, settings, CUTOFF_CUP_MG, CUTOFF_TARGET_MG, now!) : null;
+  const cutoff = ready ? getLastCupTimeResult(records, settings, CUTOFF_CUP_MG, CUTOFF_TARGET_MG, now!) : null;
 
   const chartMaxMg = ready ? Math.max(peak?.residualMg ?? 0, settings.dailyLimitMg, 1) * HEADROOM : 1;
   const mapX = (at: number) => ((at - curveStart!.getTime()) / (curveEnd!.getTime() - curveStart!.getTime())) * VB_WIDTH;
@@ -169,16 +178,19 @@ export default function ResidualCard({ open, onClose, now: suppliedNow }: Residu
                 </div>
                 <div className="flex flex-1 flex-col gap-[7px] rounded-radius-18 border border-border-subtle bg-surface-card p-space-16">
                   <span className="text-size-13 text-text-tertiary">最後の1杯</span>
-                  {cutoff ? (
+                  {cutoff?.status === "available" ? (
                     <>
-                      <span className="font-mono text-size-22 text-accent">{formatTime(cutoff)}</span>
+                      <span className="font-mono text-size-22 text-accent">{formatTime(cutoff.cutoff)}</span>
                       <span className="text-size-12 text-text-tertiary">まで（{CUTOFF_CUP_MG}mg想定）</span>
                     </>
-                  ) : (
-                    <span className="text-size-13 text-text-secondary">この条件では、今日これから追加できる目安時刻はありません</span>
+                  ) : cutoff && (
+                    <span className="text-size-13 text-text-secondary">{unavailableCutoffMessage(cutoff, settings.dailyLimitMg)}</span>
                   )}
                 </div>
               </div>
+              <p className="mt-space-10 text-size-12 text-text-tertiary">
+                この目安は、これから90mgのカフェインを摂取した場合と、就寝時の目標カフェイン残量を50mgとする前提で計算しています。医学的な安全性を保証するものではありません。
+              </p>
 
               <div className="mt-space-16 overflow-hidden rounded-radius-22 border border-border-subtle bg-surface-card">
                 <Link href="/settings" onClick={onClose} className={`flex items-center justify-between px-space-16 py-space-16 ${focus}`}>

@@ -117,6 +117,24 @@ test("bedtime prediction and cutoff satisfy both residual and daily budget", () 
   assert.throws(() => caffeine.calculateLastCupTime([], settings, -1, 50, now), RangeError);
 });
 
+test("cutoff result distinguishes each unavailable reason", () => {
+  const morning = date("2026-09-16T08:00:00");
+  const evening = date("2026-09-16T20:01:00");
+  assert.equal(caffeine.getLastCupTimeResult([], settings, 90, 50, morning).status, "available");
+  assert.deepEqual(caffeine.getLastCupTimeResult([], settings, 90, 50, evening), {
+    status: "unavailable", reason: "cutoff-passed",
+  });
+  assert.deepEqual(caffeine.getLastCupTimeResult([], settings, 90, 50, date("2026-09-16T23:01:00")), {
+    status: "unavailable", reason: "bedtime-passed",
+  });
+  assert.deepEqual(caffeine.getLastCupTimeResult([record("2026-09-16T07:00:00", 350)], settings, 90, 50, morning), {
+    status: "unavailable", reason: "daily-limit-exceeded",
+  });
+  assert.deepEqual(caffeine.getLastCupTimeResult([record("2026-09-16T13:00:00", 200)], settings, 90, 50, morning), {
+    status: "unavailable", reason: "bedtime-target-reached",
+  });
+});
+
 test("cutoff includes previous-day residual and never exceeds target after rounding", () => {
   const now = date("2026-09-16T00:00:00");
   const records = [record("2026-09-15T23:00:00", 200)];
