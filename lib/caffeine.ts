@@ -2,6 +2,7 @@ import type { IntakeRecord, Settings } from "../types";
 import { assertDate, getBedtime, isSameDay, startOfDay } from "./datetime";
 
 export const HALF_LIFE_HOURS = 5;
+export const LIMIT_WARNING_REMAINING_MG = 100;
 const HOUR_MS = 60 * 60 * 1000;
 
 function assertAmount(amount: number): void {
@@ -33,6 +34,17 @@ export function calculateTodayTotalMg(records: readonly IntakeRecord[], now = ne
     assertAmount(record.caffeineMg);
     return total + record.caffeineMg;
   }, 0);
+}
+
+export type LimitWarningStatus = "approaching" | "reached" | "exceeded";
+
+/** 残り100mg未満を接近とし、上限ちょうど・超過とは別の状態として返す。 */
+export function getLimitWarningStatus(totalMg: number, limitMg: number): LimitWarningStatus | null {
+  assertAmount(totalMg);
+  assertAmount(limitMg);
+  if (totalMg > limitMg) return "exceeded";
+  if (totalMg === limitMg) return "reached";
+  return limitMg - totalMg < LIMIT_WARNING_REMAINING_MG ? "approaching" : null;
 }
 
 export interface DrinkBreakdown {

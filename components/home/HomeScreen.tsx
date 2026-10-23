@@ -9,13 +9,27 @@ import TabBar from "@/components/TabBar";
 import { useIntakeRecords } from "@/hooks/useIntakeRecords";
 import { useSettings } from "@/hooks/useSettings";
 import { useNow } from "@/hooks/useNow";
-import { calculateLastCupTime, calculateTodayTotalMg, getTodayRecords, getQuickAddCandidates, type QuickAddCandidate } from "@/lib/caffeine";
+import { calculateLastCupTime, calculateTodayTotalMg, getLimitWarningStatus, getTodayRecords, getQuickAddCandidates, type LimitWarningStatus, type QuickAddCandidate } from "@/lib/caffeine";
 import { formatDateLabel, formatTime } from "@/lib/datetime";
 
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 const displayMg = (mg: number) => Math.round(mg).toLocaleString("ja-JP");
 const CUTOFF_CUP_MG = 90;
 const CUTOFF_TARGET_MG = 50;
+const LIMIT_WARNING_COPY: Record<LimitWarningStatus, { title: string; body: string }> = {
+  approaching: {
+    title: "上限が近づいています",
+    body: "今日は少しゆっくりめに。次の1杯の前に、ひと休みするのもおすすめです。",
+  },
+  reached: {
+    title: "今日の上限に達しました",
+    body: "ここまで記録できました。今日はカフェインを控えて、からだを休めてあげましょう。",
+  },
+  exceeded: {
+    title: "今日の上限を超えています",
+    body: "記録して気づけたことが大切です。今日はこれ以上控えて、ゆっくり過ごしましょう。",
+  },
+};
 
 export default function HomeScreen() {
   const intake = useIntakeRecords();
@@ -96,6 +110,7 @@ export default function HomeScreen() {
   const total = ready ? calculateTodayTotalMg(intake.records, now!) : 0;
   const limit = preferences.settings.dailyLimitMg;
   const reached = total >= limit;
+  const warningStatus = getLimitWarningStatus(total, limit);
   const progress = limit === 0 ? 100 : Math.max(0, Math.min(100, total / limit * 100));
   const recent = [...today].sort((a, b) => Date.parse(b.consumedAt) - Date.parse(a.consumedAt)).slice(0, 3);
   const candidates = ready ? getQuickAddCandidates(intake.records, now!, 2) : [];
@@ -147,6 +162,18 @@ export default function HomeScreen() {
               <p><span className="font-mono">{today.length}</span>杯</p>
             </div>
           </section>
+          {warningStatus && (
+            <section
+              aria-label="カフェイン摂取量のお知らせ"
+              role="status"
+              className={`mt-space-14 rounded-radius-18 border px-space-16 py-space-14 text-size-14 ${warningStatus === "exceeded" ? "border-danger/50 bg-danger/[0.10]" : "border-accent/40 bg-accent/[0.10]"}`}
+            >
+              <p className={`font-medium ${warningStatus === "exceeded" ? "text-danger" : "text-accent"}`}>
+                {LIMIT_WARNING_COPY[warningStatus].title}
+              </p>
+              <p className="mt-space-4 text-text-secondary">{LIMIT_WARNING_COPY[warningStatus].body}</p>
+            </section>
+          )}
           <ResidualSummary records={intake.records} now={now!} dailyLimitMg={limit} triggerRef={residualTriggerRef} onOpen={() => setResidualOpen(true)} />
           <section aria-label="最後の1杯の目安" className="mt-space-14 flex items-start gap-space-12 rounded-radius-18 border border-accent/30 bg-accent/[0.10] px-space-16 py-space-14 text-size-14 text-[#EBD9C4]">
             <span aria-hidden="true" className="mt-space-5 size-space-8 shrink-0 rounded-radius-99 bg-accent" />
