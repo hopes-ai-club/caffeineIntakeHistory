@@ -155,6 +155,33 @@ export function findResidualPeak(curve: readonly CurvePoint[]): CurvePoint | nul
   return curve.reduce((peak, point) => (point.residualMg > peak.residualMg ? point : peak));
 }
 
+export type LastCupTimeResult =
+  | { status: "available"; cutoff: Date }
+  | { status: "unavailable"; reason: "bedtime-passed" | "daily-limit-exceeded" | "bedtime-target-reached" | "cutoff-passed" };
+
+/** 「最後の1杯」が利用できない理由も含めて返す。UIで原因に合った案内を出すために使用する。 */
+export function getLastCupTimeResult(
+  records: readonly IntakeRecord[], settings: Settings, cupMg: number,
+  bedtimeTargetMg: number, now = new Date(),
+): LastCupTimeResult {
+  assertAmount(cupMg);
+  assertAmount(bedtimeTargetMg);
+  assertAmount(settings.dailyLimitMg);
+  const bedtime = getBedtime(now, settings.bedtime);
+  if (now > bedtime) return { status: "unavailable", reason: "bedtime-passed" };
+  const dayTotal = records.filter((record) => isSameDay(new Date(record.consumedAt), now))
+    .reduce((sum, record) => { assertAmount(record.caffeineMg); return sum + record.caffeineMg; }, 0);
+  if (dayTotal + cupMg > settings.dailyLimitMg) return { status: "unavailable", reason: "daily-limit-exceeded" };
+  const available = bedtimeTargetMg - calculateResidualMg(records, bedtime);
+  if (available < 0 || (available === 0 && cupMg > 0)) {
+    return { status: "unavailable", reason: "bedtime-target-reached" };
+  }
+  const hours = cupMg === 0 || cupMg <= available ? 0 : HALF_LIFE_HOURS * Math.log2(cupMg / available);
+  const cutoff = new Date(Math.floor(bedtime.getTime() - hours * HOUR_MS));
+  if (cutoff < now || cutoff < startOfDay(now)) return { status: "unavailable", reason: "cutoff-passed" };
+  return { status: "available", cutoff };
+}
+
 /**
  * 今日の追加1杯の最終時刻。残量目標は医学的な安全閾値ではなく呼び出し側の目安。
  * 当日の既存記録（未来分も含む）で日上限を判定し、過去全期間で就寝時残量を算出。
@@ -164,18 +191,6 @@ export function calculateLastCupTime(
   records: readonly IntakeRecord[], settings: Settings, cupMg: number,
   bedtimeTargetMg: number, now = new Date(),
 ): Date | null {
-  assertAmount(cupMg);
-  assertAmount(bedtimeTargetMg);
-  assertAmount(settings.dailyLimitMg);
-  const bedtime = getBedtime(now, settings.bedtime);
-  if (now > bedtime) return null;
-  const dayTotal = records.filter((record) => isSameDay(new Date(record.consumedAt), now))
-    .reduce((sum, record) => { assertAmount(record.caffeineMg); return sum + record.caffeineMg; }, 0);
-  if (dayTotal + cupMg > settings.dailyLimitMg) return null;
-  const available = bedtimeTargetMg - calculateResidualMg(records, bedtime);
-  if (available < 0 || (available === 0 && cupMg > 0)) return null;
-  const hours = cupMg === 0 || cupMg <= available ? 0 : HALF_LIFE_HOURS * Math.log2(cupMg / available);
-  const cutoff = new Date(Math.floor(bedtime.getTime() - hours * HOUR_MS));
-  if (cutoff < now || cutoff < startOfDay(now)) return null;
-  return cutoff;
+  const result = getLastCupTimeResult(records, settings, cupMg, bedtimeTargetMg, now);
+  return result.status === "available" ? result.cutoff : null;
 }

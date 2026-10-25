@@ -9,7 +9,7 @@ import TabBar from "@/components/TabBar";
 import { useIntakeRecords } from "@/hooks/useIntakeRecords";
 import { useSettings } from "@/hooks/useSettings";
 import { useNow } from "@/hooks/useNow";
-import { calculateLastCupTime, calculateTodayTotalMg, getLimitWarningStatus, getTodayRecords, getQuickAddCandidates, type LimitWarningStatus, type QuickAddCandidate } from "@/lib/caffeine";
+import { calculateTodayTotalMg, getLastCupTimeResult, getLimitWarningStatus, getTodayRecords, getQuickAddCandidates, type LastCupTimeResult, type LimitWarningStatus, type QuickAddCandidate } from "@/lib/caffeine";
 import { formatDateLabel, formatTime } from "@/lib/datetime";
 
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
@@ -30,6 +30,15 @@ const LIMIT_WARNING_COPY: Record<LimitWarningStatus, { title: string; body: stri
     body: "記録して気づけたことが大切です。今日はこれ以上控えて、ゆっくり過ごしましょう。",
   },
 };
+
+function unavailableCutoffMessage(result: Extract<LastCupTimeResult, { status: "unavailable" }>, dailyLimitMg: number): string {
+  switch (result.reason) {
+    case "bedtime-passed": return "今日の就寝時刻を過ぎています。これからのカフェイン摂取は控えるのがおすすめです。";
+    case "daily-limit-exceeded": return `これから${CUTOFF_CUP_MG}mg以上のカフェインを摂取すると、今日の摂取量が設定上限の${dailyLimitMg}mgを超過します。`;
+    case "bedtime-target-reached": return `現時点で、就寝時の推定残量は目標の${CUTOFF_TARGET_MG}mg以上です。今日は追加の摂取を控えるのがおすすめです。`;
+    case "cutoff-passed": return `就寝時の推定残量が${CUTOFF_TARGET_MG}mg以下となる目安摂取時刻を過ぎています。`;
+  }
+}
 
 export default function HomeScreen() {
   const intake = useIntakeRecords();
@@ -114,7 +123,7 @@ export default function HomeScreen() {
   const progress = limit === 0 ? 100 : Math.max(0, Math.min(100, total / limit * 100));
   const recent = [...today].sort((a, b) => Date.parse(b.consumedAt) - Date.parse(a.consumedAt)).slice(0, 3);
   const candidates = ready ? getQuickAddCandidates(intake.records, now!, 2) : [];
-  const cutoff = ready ? calculateLastCupTime(intake.records, preferences.settings, CUTOFF_CUP_MG, CUTOFF_TARGET_MG, now!) : null;
+  const cutoff = ready ? getLastCupTimeResult(intake.records, preferences.settings, CUTOFF_CUP_MG, CUTOFF_TARGET_MG, now!) : null;
 
   function quickAdd(candidate: QuickAddCandidate) {
     if (!ready) return;
@@ -178,8 +187,8 @@ export default function HomeScreen() {
           <section aria-label="最後の1杯の目安" className="mt-space-14 flex items-start gap-space-12 rounded-radius-18 border border-accent/30 bg-accent/[0.10] px-space-16 py-space-14 text-size-14 text-[#EBD9C4]">
             <span aria-hidden="true" className="mt-space-5 size-space-8 shrink-0 rounded-radius-99 bg-accent" />
             <p>
-              {cutoff ? <><span className="font-mono">{preferences.settings.bedtime}</span> 就寝なら <span className="font-mono">{formatTime(cutoff)}</span> までが最後の1杯の目安</> : "この条件では、今日これから追加できる目安時刻はありません"}
-              <span className="mt-space-4 block text-size-12 text-text-secondary">追加90mg・就寝時目標50mgで計算した表示です。医学的な安全保証ではありません。</span>
+              {cutoff?.status === "available" ? <><span className="font-mono">{preferences.settings.bedtime}</span>に就寝する場合は、最後の1杯を<span className="font-mono">{formatTime(cutoff.cutoff)}</span>までに摂取するのがおすすめです</> : cutoff && unavailableCutoffMessage(cutoff, limit)}
+              <span className="mt-space-4 block text-size-12 text-text-secondary">この目安は、これから90mgのカフェインを摂取した場合と、就寝時の目標カフェイン残量を50mgとする前提で計算しています。医学的な安全性を保証するものではありません。</span>
             </p>
           </section>
           <section aria-labelledby="today-records" className="mt-space-22">
