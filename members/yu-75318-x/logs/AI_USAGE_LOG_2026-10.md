@@ -127,3 +127,22 @@
 | 根拠コミット | `6694bd5` — fix: clarify unavailable last cup guidance<br>`4011b39` — docs: add last cup guidance evidence |
 | Issue | [#36 — 「最後の1杯」の目安なし表示が実際の摂取量と無関係に夕方以降ほぼ毎日出る](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/36) |
 | PR | [#40 — fix: 「最後の1杯」の目安なし表示を原因別に改善](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/40) |
+
+### 2026-10-25 — フェーズ6の総合動作確認・品質チェック
+
+| 項目 | 内容 |
+|---|---|
+| 日付 | 2026-10-25 |
+| 工程 | 調査／テスト／レビュー／文書化 |
+| ツール | Codex（Chrome・DevTools Protocolによるブラウザ検証を含む） |
+| タスク概要 | Issue #27に基づき、フェーズ6の自動チェック、主要機能のブラウザ総合確認、主要な空・失敗状態、PWAのinstallabilityとオフライン起動、375px・402px・1280pxの表示を確認した。結果を`docs/evidence/comprehensive-qa/README.md`へ記録し、`TODO.md`のフェーズ6を完了状態へ更新した。既知課題はIssue #16へ紐付け、作業ブランチ`chore/issue-27-comprehensive-qa`でコミット・push後、PR #42を作成し、Issue #27にも実施結果をコメントした。 |
+| 採用状況 | 修正して採用（PR #42としてレビュー待ち） |
+| プロンプトの要点 | Issue #27の作業として、型チェック、lint、テスト、build、主要機能、警告3状態、統計3期間、設定反映、永続化、PWA、レスポンシブ、コンソールを総合確認するよう依頼された。Git操作は`git-workflow` Skillに従い、コミット前とPR作成前に確認を挟んだ。途中で、任意の手動入力名はIssue #16で対応予定のため今回実装しないこと、`npm run build`はユーザーが手動実行して成功済みのため検出事項に含めないことが追加指示された。 |
+| 手戻り・誤り | AIは総合確認中に任意の手動入力名が未実装であることを検出し、当初は名前入力欄を追加したが、Issue #16の担当範囲であるとの指摘を受けて実装差分を完全に取り除いた。また、実行環境でTurbopackの内部ポート作成が拒否された際に`package.json`のbuildをWebpackへ固定する案を反映したが、ユーザー環境では通常の`npm run build`が成功していたため、この設定変更と検出事項も除外した。開発サーバーが`AGENTS.md`へ自動追記した案内ブロックは対象外差分として除去した。通常Chromeの保存データへ追加した検証用3件は、削除直前にユーザー確認を得たうえで削除し、上限400mg・就寝23:00へ復元した。 |
+| 所要時間 | AIありの実測時間: 約45分／AIなしの見積時間: 2時間 |
+| 学び | 総合QAで不具合を見つけても、既存Issueの担当範囲と今回の受け入れ条件を確認してから修正対象を決める必要がある。環境依存の失敗は直ちにプロジェクト設定へ反映せず、利用者環境での再現性と代替検証結果を分けて扱うべきである。PWAはmanifestの構文確認だけでなく、Chromeのinstallability診断、Service Workerの制御状態、Cache Storage、サーバー停止後の再読み込みを組み合わせると、インストール可能性とオフライン動作を再現性高く確認できる。通常データを操作するブラウザ確認では、テストデータと設定を特定し、後片付けまで検証手順に含めることが重要である。 |
+| 実施した検証 | `npx tsc --noEmit`、`npm run lint`、`npm test`（Asia/Tokyo・America/New_Yorkで各19件）、`npm run build`、`git diff --check`が成功した。ブラウザでプリセット・手動記録、合計・残存量・内訳、残量カーブ、最後の1杯、履歴フィルター・削除、上限接近・到達・超過、統計3期間、設定反映、再読み込み保持を確認した。分離Chromeで空状態、破損JSON保持、保存失敗時の入力保持、manifest、installabilityエラー0件、Service Workerの`activated`・制御状態、キャッシュ、サーバー停止後のオフライン表示を確認した。4画面を375px・402px・1280pxで検査し、横スクロール、コンテンツ隠れ、コンソール警告・エラーがないことを確認した。 |
+| 未検証事項 | OSのアプリ一覧へ実際にPWAをインストールする操作、実機スマートフォンでの起動、Vercel本番環境での総合確認。任意の手動入力名はIssue #16で別途対応予定。 |
+| 根拠コミット | `87b8b70` — docs: record comprehensive QA results |
+| Issue | [#27 — フェーズ6の総合動作確認・品質チェックを行う](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/27) |
+| PR | [#42 — docs: フェーズ6の総合動作確認結果を記録](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/42) |
