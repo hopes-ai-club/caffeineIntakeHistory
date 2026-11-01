@@ -57,6 +57,15 @@ description: Safely manage branches, commits, pushes, and pull requests for this
 
 承認後に差分が実質的に変わった場合は、以前の承認を流用せず、改めてコミット前確認を行う。
 
+## AI活用ログの確認
+
+通常作業分のコミットとpushが完了した後、Pull Request作成前に[共通のAI活用ログ運用ルール](../ai-usage-log/SKILL.md)を全文読み、その内容に従う。
+
+- 通常作業が記録対象なら、ユーザーへAI活用ログを作成・追記するか確認する。
+- 承認された場合は、通常作業分と混ぜず、ログ差分について別途コミット前確認、commit、pushを行う。
+- 作成しないと回答された場合は、ログを変更せずPull Request前の確認へ進む。
+- AI活用ログのコミット自身について、この確認を繰り返さない。
+
 ## Pull Request前の必須確認
 
 push後、既存PRの有無とbase/headを確認する。PRを新規作成する場合は次を提示し、ユーザーの2回目の明示的な承認を待つ。

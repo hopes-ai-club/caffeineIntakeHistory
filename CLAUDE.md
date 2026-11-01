@@ -61,6 +61,7 @@
 
 ## 開発ワークフロー
 - 開発作業に伴うブランチ作成、コミット、push、Pull Requestでは、プロジェクトの `git-workflow` Skillを使用する
+- 通常作業分のコミット完了後（pushを行う作業ではpush完了後）は、`git-workflow` Skillから共通の `ai-usage-log` Skillへ引き継ぎ、ユーザーが承認した場合だけAI活用ログを別コミットで作成・追記する
 
 ## 詳細仕様（確認済み）
 
