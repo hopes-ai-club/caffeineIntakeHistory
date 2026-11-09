@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 const load = (path) => require(join(process.env.LOGIC_BUILD_DIR, path));
 const caffeine = load("lib/caffeine.js");
 const datetime = load("lib/datetime.js");
+const intake = load("lib/intake.js");
 const stats = load("lib/stats.js");
 const storage = load("lib/storage.js");
 const { PRESETS } = load("data/presets.js");
@@ -31,6 +32,33 @@ test("10 immutable presets have stable unique IDs, serving sizes and positive am
     assert.ok(Object.isFrozen(p));
   }
   assert.ok(Object.isFrozen(PRESETS));
+});
+
+test("manual intake validation trims names and reports required or non-positive values", () => {
+  assert.deepEqual(intake.validateIntakeDraft("  自家製ラテ  ", " 42.5 "), {
+    name: "自家製ラテ", caffeineMg: 42.5, nameError: null, amountError: null,
+  });
+  assert.deepEqual(intake.validateIntakeDraft("   ", ""), {
+    name: "", caffeineMg: null,
+    nameError: "飲み物名を入力してください。",
+    amountError: "カフェイン量を入力してください。",
+  });
+  for (const amount of ["0", "-1", "Infinity", "not-a-number"]) {
+    const result = intake.validateIntakeDraft("飲み物", amount);
+    assert.equal(result.nameError, null);
+    assert.equal(result.amountError, "カフェイン量は0より大きい数値で入力してください。");
+  }
+});
+
+test("manual intake record keeps the entered amount and null preset while trimming its name", () => {
+  const input = {
+    presetId: null, name: "  自家製ラテ  ", caffeineMg: 42.5,
+    consumedAt: "2026-11-09T12:34:56.789Z",
+  };
+  assert.deepEqual(intake.createIntakeRecord(input, "manual-id"), {
+    id: "manual-id", presetId: null, name: "自家製ラテ", caffeineMg: 42.5,
+    consumedAt: "2026-11-09T12:34:56.789Z",
+  });
 });
 
 test("residual includes exact intake instant, halves in 5h, excludes future", () => {

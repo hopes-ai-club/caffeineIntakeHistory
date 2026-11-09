@@ -2,6 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 import type { IntakeRecord } from "../types";
+import { createIntakeRecord, type NewIntakeRecordData } from "../lib/intake";
 import { loadIntakeRecords, saveIntakeRecords, type StorageResult } from "../lib/storage";
 
 type StorageError = Extract<StorageResult<IntakeRecord[]>, { ok: false }>["error"];
@@ -58,14 +59,7 @@ function write(next: IntakeRecord[]): boolean {
   return result.ok;
 }
 
-export interface NewIntakeRecordInput {
-  /** 手動入力の場合は null。 */
-  presetId: string | null;
-  name: string;
-  caffeineMg: number;
-  /** UTCのISO 8601文字列（ミリ秒付き）。 */
-  consumedAt: string;
-}
+export type NewIntakeRecordInput = NewIntakeRecordData;
 
 export interface UseIntakeRecordsResult extends RecordsSnapshot {
   /** 保存に成功すれば追加された記録を、失敗すれば null を返す。 */
@@ -82,13 +76,7 @@ export function useIntakeRecords(): UseIntakeRecordsResult {
   const { records, status, error } = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const addRecord = useCallback((input: NewIntakeRecordInput): IntakeRecord | null => {
-    const record: IntakeRecord = {
-      id: crypto.randomUUID(),
-      presetId: input.presetId,
-      name: input.name.trim(),
-      caffeineMg: input.caffeineMg,
-      consumedAt: input.consumedAt,
-    };
+    const record = createIntakeRecord(input, crypto.randomUUID());
     return write([...snapshot.records, record]) ? record : null;
   }, []);
 

@@ -7,11 +7,10 @@ import { useSettings } from "@/hooks/useSettings";
 import { useNow } from "@/hooks/useNow";
 import { calculateTodayTotalMg } from "@/lib/caffeine";
 import { fromDatetimeLocal, toDatetimeLocal } from "@/lib/datetime";
+import { validateIntakeDraft } from "@/lib/intake";
 
 const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
 const displayMg = (mg: number) => Math.round(mg).toLocaleString("ja-JP");
-/** プリセットを使わない手動入力の飲料名。手動入力どうしは同じ名前でまとめる集計仕様に合わせた固定名。 */
-const MANUAL_ENTRY_NAME = "手動入力";
 const SAVE_FAILED_MESSAGE = "保存できませんでした。入力内容は保持しています。もう一度お試しください。";
 
 export interface IntakeFormProps {
@@ -19,12 +18,6 @@ export interface IntakeFormProps {
   open: boolean;
   /** 閉じる操作（背景タップ・「閉じる」・Esc・保存成功）を呼び出し側へ通知する。 */
   onClose: () => void;
-}
-
-/** 数値化できて0より大きい入力かどうか。 */
-function isPositiveAmount(input: string): boolean {
-  const value = Number(input);
-  return input.trim() !== "" && Number.isFinite(value) && value > 0;
 }
 
 /**
@@ -38,18 +31,22 @@ export default function IntakeForm({ open, onClose }: IntakeFormProps) {
 
   const [prevOpen, setPrevOpen] = useState(open);
   const [selectedPresetId, setSelectedPresetId] = useState<string | null>(null);
+  const [nameInput, setNameInput] = useState("");
   const [amountInput, setAmountInput] = useState("");
   const [manualConsumedAt, setManualConsumedAt] = useState<Date | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // 開いた瞬間に前回の入力を持ち越さないよう、propの変化に合わせて描画中に下書きをリセットする（Effectは使わない）。
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
       setSelectedPresetId(null);
+      setNameInput("");
       setAmountInput("");
       setManualConsumedAt(null);
-      setError(null);
+      setShowValidation(false);
+      setSaveError(null);
     }
   }
 
@@ -64,41 +61,52 @@ export default function IntakeForm({ open, onClose }: IntakeFormProps) {
 
   const broken = intake.status === "error" || preferences.status === "error";
   const consumedAt = manualConsumedAt ?? liveNow ?? new Date();
-  const validAmount = isPositiveAmount(amountInput);
+  const validation = validateIntakeDraft(nameInput, amountInput);
+  const validAmount = validation.amountError === null && validation.caffeineMg !== null;
   const limit = preferences.settings.dailyLimitMg;
   const todayTotal = calculateTodayTotalMg(intake.records, liveNow ?? new Date());
   const previewTotal = todayTotal + (validAmount ? Number(amountInput) : 0);
   const overLimit = previewTotal > limit;
 
   function selectPreset(id: string, caffeineMg: number) {
+    const preset = PRESETS.find((item) => item.id === id);
+    if (!preset) return;
     setSelectedPresetId(id);
+    setNameInput(preset.name);
     setAmountInput(String(caffeineMg));
-    setError(null);
+    setShowValidation(false);
+    setSaveError(null);
+  }
+
+  function editName(value: string) {
+    setSelectedPresetId(null);
+    setNameInput(value);
+    setSaveError(null);
   }
 
   function editAmount(value: string) {
-    setSelectedPresetId(null);
     setAmountInput(value);
-    setError(null);
+    setSaveError(null);
   }
 
   function handleSubmit() {
-    if (broken || !validAmount) return;
-    const name = selectedPresetId ? PRESETS.find((preset) => preset.id === selectedPresetId)?.name ?? MANUAL_ENTRY_NAME : MANUAL_ENTRY_NAME;
+    if (broken) return;
+    setShowValidation(true);
+    if (validation.nameError || validation.amountError || validation.caffeineMg === null) return;
     try {
       const saved = intake.addRecord({
         presetId: selectedPresetId,
-        name,
-        caffeineMg: Number(amountInput),
+        name: validation.name,
+        caffeineMg: validation.caffeineMg,
         consumedAt: consumedAt.toISOString(),
       });
       if (!saved) {
-        setError(SAVE_FAILED_MESSAGE);
+        setSaveError(SAVE_FAILED_MESSAGE);
         return;
       }
       onClose();
     } catch {
-      setError(SAVE_FAILED_MESSAGE);
+      setSaveError(SAVE_FAILED_MESSAGE);
     }
   }
 
@@ -148,23 +156,48 @@ export default function IntakeForm({ open, onClose }: IntakeFormProps) {
             })}
           </div>
 
-          <div className="mb-space-22 flex items-center justify-between gap-space-10 rounded-radius-16 border border-dashed border-border-strong bg-surface-row px-space-16 py-space-14">
-            <label htmlFor="intake-manual-amount" className="text-size-14 text-text-secondary">プリセットを使わず手動で入力</label>
-            <div className="flex items-baseline gap-space-4">
-              <input
-                id="intake-manual-amount"
-                type="number"
-                inputMode="numeric"
-                min={0}
-                step={1}
-                disabled={broken}
-                value={amountInput}
-                onChange={(event) => editAmount(event.target.value)}
-                className={`w-[4.5em] border-b-[1.5px] border-accent bg-transparent px-space-8 pb-space-4 text-right font-mono text-size-17 text-text-primary disabled:opacity-50 ${focus}`}
-              />
-              <span className="font-mono text-size-13 text-text-tertiary">mg</span>
+          <fieldset className="mb-space-22 rounded-radius-16 border border-dashed border-border-strong bg-surface-row px-space-16 py-space-14">
+            <legend className="px-space-4 text-size-14 text-text-secondary">飲み物を入力</legend>
+            <div className="flex flex-col gap-space-14">
+              <div>
+                <label htmlFor="intake-drink-name" className="mb-space-6 block text-size-13 text-text-secondary">飲み物名</label>
+                <input
+                  id="intake-drink-name"
+                  type="text"
+                  autoComplete="off"
+                  required
+                  disabled={broken}
+                  value={nameInput}
+                  aria-invalid={showValidation && validation.nameError !== null}
+                  aria-describedby={showValidation && validation.nameError ? "intake-name-error" : undefined}
+                  onChange={(event) => editName(event.target.value)}
+                  className={`w-full border-b-[1.5px] bg-transparent px-space-4 pb-space-5 text-size-16 text-text-primary disabled:opacity-50 ${showValidation && validation.nameError ? "border-danger" : "border-accent"} ${focus}`}
+                />
+                {showValidation && validation.nameError && <p id="intake-name-error" className="mt-space-5 text-size-12 text-danger">{validation.nameError}</p>}
+              </div>
+              <div>
+                <label htmlFor="intake-caffeine-amount" className="mb-space-6 block text-size-13 text-text-secondary">カフェイン量</label>
+                <div className="flex items-baseline gap-space-4">
+                  <input
+                    id="intake-caffeine-amount"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step="any"
+                    required
+                    disabled={broken}
+                    value={amountInput}
+                    aria-invalid={showValidation && validation.amountError !== null}
+                    aria-describedby={showValidation && validation.amountError ? "intake-amount-error" : undefined}
+                    onChange={(event) => editAmount(event.target.value)}
+                    className={`w-[6em] border-b-[1.5px] bg-transparent px-space-4 pb-space-5 text-right font-mono text-size-17 text-text-primary disabled:opacity-50 ${showValidation && validation.amountError ? "border-danger" : "border-accent"} ${focus}`}
+                  />
+                  <span className="font-mono text-size-13 text-text-tertiary">mg</span>
+                </div>
+                {showValidation && validation.amountError && <p id="intake-amount-error" className="mt-space-5 text-size-12 text-danger">{validation.amountError}</p>}
+              </div>
             </div>
-          </div>
+          </fieldset>
 
           <div className="flex items-center justify-between border-t border-border-subtle py-space-16">
             <span className="text-size-15 text-text-secondary">飲んだ時刻</span>
@@ -196,12 +229,12 @@ export default function IntakeForm({ open, onClose }: IntakeFormProps) {
             </p>
           </div>
 
-          {error && <p role="alert" className="mt-space-14 text-size-14 text-danger">{error}</p>}
+          {saveError && <p role="alert" className="mt-space-14 text-size-14 text-danger">{saveError}</p>}
         </div>
 
         <button
           type="button"
-          disabled={broken || !validAmount}
+          disabled={broken}
           onClick={handleSubmit}
           className={`mt-space-16 w-full shrink-0 rounded-radius-18 bg-accent p-[18px] text-center text-size-17 font-semibold text-bg-base disabled:opacity-50 ${focus}`}
         >記録する</button>
