@@ -36,13 +36,13 @@
 | 日付 | 2026-11-12 |
 | 工程 | 調査／実装／テスト／文書化 |
 | ツール | Codex |
-| タスク概要 | Issue #41に基づき、2026-10-23時点の調査をそのまま適用せず、Node.js公式情報、Vercelの対応状況、npmレジストリ、`npm audit`を再確認した。最新LTSのセキュリティリリースであるNode.js 26.13.1を`.nvmrc`と`engines.node`へ反映し、Next.jsと`eslint-config-next`を16.4.6、`@types/node`を26.6.6へ更新した。ロックファイルの`sharp`、`source-map-js`、`brace-expansion`、`zod`などを修正版へ更新し、`typescript-eslint`配下で修正版のないminimatch 10.xだけを11.0.8へ限定overrideして、完全監査と本番依存監査を0件にした。READMEの前提環境とセットアップ案内もNode.js 26系へ更新し、作業ブランチ`chore/update-security-dependencies`で通常作業分をコミット・pushした。 |
+| タスク概要 | Issue #41に基づき、2026-10-23時点の調査をそのまま適用せず、Node.js公式情報、Vercelの対応状況、npmレジストリ、`npm audit`を再確認した。調査時点の最新LTSであるNode.js 26.13.1も確認した上で、Issue #35のCI導入方針とローカル・CI・Vercelのメジャーバージョンを揃えるため、最新の24系セキュリティリリースであるNode.js 24.22.3を`.nvmrc`と`engines.node`へ反映した。Next.jsと`eslint-config-next`を16.4.6、`@types/node`を24.19.2へ更新し、ロックファイルの`sharp`、`source-map-js`、`brace-expansion`、`zod`などを修正版へ更新した。`typescript-eslint`配下で修正版のないminimatch 10.xだけを11.0.8へ限定overrideして、完全監査と本番依存監査を0件にした。READMEの前提環境とセットアップ案内もNode.js 24系へ更新し、作業ブランチ`chore/update-security-dependencies`で通常作業分をコミット・pushした。 |
 | 採用状況 | 採用（通常作業分と分離してAI活用ログへ記録） |
 | プロンプトの要点 | GitHub Issue #41の対応前に、記載済みバージョンを前提とせず最新の脆弱性情報を全体的に洗い直し、必要な更新を実装・検証するよう依頼された。 |
-| 手戻り・誤り | 初回のnpm監査はサンドボックスのDNS制限で失敗したため、ネットワーク許可付きで再実行した。直接依存更新後も最新`typescript-eslint`が脆弱なminimatch 10.xを指定していたため、利用APIとNode要件を確認して対象経路限定のoverrideを追加した。標準のTurbopackビルドは実行環境がPostCSS処理用ローカルポートを許可せず失敗したため、Next.jsのWebpackビルダーで本番成果物を検証した。通常作業のpush後にGitHub CLI認証が無効になっていることを検出したため、PR作成前に再認証が必要。 |
+| 手戻り・誤り | 初回のnpm監査はサンドボックスのDNS制限で失敗したため、ネットワーク許可付きで再実行した。直接依存更新後も最新`typescript-eslint`が脆弱なminimatch 10.xを指定していたため、利用APIとNode要件を確認して対象経路限定のoverrideを追加した。当初はNode.js 26.13.1へ更新したが、Issue #35のCIを24系にする方針との不一致が判明したため、Node.js 24.22.3と24系型定義へ揃えて全検証をやり直した。標準のTurbopackビルドは実行環境がPostCSS処理用ローカルポートを許可せず失敗したため、Next.jsのWebpackビルダーで本番成果物を検証した。通常作業のpush後にGitHub CLI認証が一時的に無効と表示されたが、その後の追加コミットのpushは成功した。 |
 | 所要時間 | 未計測 |
 | 学び | 脆弱性Issueは調査日から時間が経つと、修正版だけでなく新しいLTS、追加アドバイザリ、依存経路も変わるため、実装直前に本番依存と開発依存を分けて再監査する必要がある。上流がまだ安全な依存範囲を公開していない場合でも、影響経路と利用APIを限定して確認し、互換性テストを伴うnpm overrideを適用することで、無関係な依存へ影響を広げずに監査結果を解消できる。 |
-| 実施した検証 | Node.js 26.13.1公式配布物のSHA-256一致を確認し、その環境で`npm ci`、完全な`npm audit`、`npm audit --omit=dev`、`npm run lint`相当、`npm test`、`npx tsc --noEmit`相当、Webpack本番ビルド、`git diff --check`が成功した。テストはAsia/TokyoとAmerica/New_Yorkで各19件成功した。ビルド済みアプリをNode.js 26.13.1で起動し、今日・履歴・統計・設定の4画面、`manifest.json`、`sw.js`がHTTP 200で応答することを確認した。通常作業分のコミット`4cef897`をoriginへpushし、作業ツリーがcleanであることを確認した。 |
-| 未検証事項 | 標準の`npm run build`はTurbopackがローカルポートを開けない実行環境制限により未完了。Vercelの実際のNode.jsパッチ版、Build Logs、プレビュー・本番デプロイ、本番4画面とPWA起動は未確認。リポジトリにGitHub Actions設定がないため、CI上のNode.js 26.13.1実行は未検証。Pull Requestは未作成。 |
-| 根拠コミット | `4cef897` — chore: update vulnerable dependencies |
+| 実施した検証 | Node.js 24.22.3公式配布物のSHA-256一致を確認し、その環境で`npm ci`、完全な`npm audit`、`npm audit --omit=dev`、`npm run lint`相当、`npm test`、`npx tsc --noEmit`相当、Webpack本番ビルド、依存ツリー確認、`git diff --check`が成功した。テストはAsia/TokyoとAmerica/New_Yorkで各19件成功した。ビルド済みアプリをNode.js 24.22.3で起動し、今日・履歴・統計・設定の4画面、`manifest.json`、`sw.js`がHTTP 200で応答することを確認した。通常作業分のコミット`4cef897`とNode 24系へ揃える追加コミット`7fbf4de`をoriginへpushした。 |
+| 未検証事項 | 標準の`npm run build`はTurbopackがローカルポートを開けない実行環境制限により未完了。Vercelの実際のNode.jsパッチ版、Build Logs、プレビュー・本番デプロイ、本番4画面とPWA起動は未確認。Issue #35のGitHub Actions設定は未実装のため、CI上のNode.js 24.22.3実行は未検証。Pull Requestは未作成。 |
+| 根拠コミット | `4cef897` — chore: update vulnerable dependencies<br>`7fbf4de` — chore: align Node.js with CI runtime |
 | Issue | [#41 — Node.jsとnpm依存関係を脆弱性修正版へ更新する](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/41) |
