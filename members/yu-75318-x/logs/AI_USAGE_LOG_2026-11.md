@@ -26,6 +26,7 @@
 | 未検証事項 | Claude Code CLIが環境に導入されていないため、Claude Code実環境でのSkill選択と確認動作は未検証。ログ作成を拒否した場合、作業ユーザーの既存ログがない場合、形式を一意に判定できない場合の対話動作は実環境では未検証。アプリコードを変更していないため、`npm test`、`npm run lint`、型チェック、buildは未実施。 |
 | 根拠コミット | `ee44bf4` — feat: automate AI usage log recording |
 | Issue | [#38 — 作業完了時のAI活用ログ記録を自動化する](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/38) |
+| Pull Request | [#44 — feat: AI活用ログの記録確認を作業完了フローへ追加](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/44) |
 
 ## 2026-11-09 〜 2026-11-15
 
@@ -62,9 +63,10 @@
 | 所要時間 | 未計測 |
 | 学び | 脆弱性Issueは調査日から時間が経つと、修正版だけでなく新しいLTS、追加アドバイザリ、依存経路も変わるため、実装直前に本番依存と開発依存を分けて再監査する必要がある。上流がまだ安全な依存範囲を公開していない場合でも、影響経路と利用APIを限定して確認し、互換性テストを伴うnpm overrideを適用することで、無関係な依存へ影響を広げずに監査結果を解消できる。 |
 | 実施した検証 | Node.js 24.22.3公式配布物のSHA-256一致を確認し、その環境で`npm ci`、完全な`npm audit`、`npm audit --omit=dev`、`npm run lint`相当、`npm test`、`npx tsc --noEmit`相当、Webpack本番ビルド、依存ツリー確認、`git diff --check`が成功した。テストはAsia/TokyoとAmerica/New_Yorkで各19件成功した。ビルド済みアプリをNode.js 24.22.3で起動し、今日・履歴・統計・設定の4画面、`manifest.json`、`sw.js`がHTTP 200で応答することを確認した。通常作業分のコミット`4cef897`とNode 24系へ揃える追加コミット`7fbf4de`をoriginへpushした。 |
-| 未検証事項 | 標準の`npm run build`はTurbopackがローカルポートを開けない実行環境制限により未完了。Vercelの実際のNode.jsパッチ版、Build Logs、プレビュー・本番デプロイ、本番4画面とPWA起動は未確認。Issue #35のGitHub Actions設定は未実装のため、CI上のNode.js 24.22.3実行は未検証。Pull Requestは未作成。 |
+| 未検証事項 | 標準の`npm run build`はTurbopackがローカルポートを開けない実行環境制限により未完了。Vercelの実際のNode.jsパッチ版、Build Logs、プレビュー・本番デプロイ、本番4画面とPWA起動は未確認。Issue #35のGitHub Actions設定は未実装のため、CI上のNode.js 24.22.3実行は未検証。 |
 | 根拠コミット | `4cef897` — chore: update vulnerable dependencies<br>`7fbf4de` — chore: align Node.js with CI runtime |
 | Issue | [#41 — Node.jsとnpm依存関係を脆弱性修正版へ更新する](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/41) |
+| Pull Request | [#61 — chore: Node.jsと依存関係を脆弱性修正版へ更新](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/61) |
 
 ## 2026-11-16 〜 2026-11-22
 
