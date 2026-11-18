@@ -82,6 +82,7 @@
 | 所要時間 | 未計測 |
 | 学び | 履歴期間はミリ秒固定幅ではなくローカル暦日の加減算で求めるとDSTをまたいでも日付境界を維持できる。期間入力の下書きと適用済み条件を分けることで、不正入力時に現在の結果を失わず理由を表示できる。画面エビデンスは旧画像を上書き・削除せず、撮影時点と対象コミットを明記した新しい証跡を追加し、旧READMEから後継へリンクすると過去の監査性と現行画面への導線を両立できる。 |
 | 実施した検証 | `npm test`がAsia/TokyoとAmerica/New_Yorkで各24件成功し、`npm run lint`、`npx tsc --noEmit`、`npm run build`、`git diff --check`が成功した。ユーザーのローカルターミナルでも`npm run build`成功の報告を受けた。ブラウザ自動検証では375pxで1週間から1か月への切り替え、飲み物フィルター、不正期間の理由表示、45日範囲の古い記録、削除確認のキャンセルを確認し、375px・1280pxで横スクロールがないことを確認した。エビデンス撮影では架空の6記録を使い、402pxで1週間3件、1か月5件、フィルター2件、不正期間、40日前の記録と削除確認を確認し、1280pxを含めて横方向のオーバーフローがないことを確認した。PNG6枚の形式・寸法、READMEの画像参照、旧READMEから現行エビデンスへのリンクも確認した。 |
-| 未検証事項 | 共有Chrome操作APIの内部エラーにより、同API上の可視ブラウザセッションでは未確認。代わりにローカルのChrome本体をheadlessで操作して主要フローとレイアウトを検証した。読み込み失敗状態と実際の削除確定は今回の画面エビデンスには含めていない。Pull Requestは未作成。 |
+| 未検証事項 | 共有Chrome操作APIの内部エラーにより、同API上の可視ブラウザセッションでは未確認。代わりにローカルのChrome本体をheadlessで操作して主要フローとレイアウトを検証した。読み込み失敗状態と実際の削除確定は今回の画面エビデンスには含めていない。 |
 | 根拠コミット | `0d37bcb` — feat: add selectable history date ranges<br>`d861b4e` — docs: add history date range evidence |
 | Issue | [#29 — 履歴：1週間・1か月・期間指定で過去の記録を確認できるようにする](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/29) |
+| Pull Request | [#62 — feat: 履歴の表示期間切り替えと期間指定に対応](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/62) |
