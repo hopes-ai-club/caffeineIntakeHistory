@@ -5,7 +5,7 @@ import TabBar from "@/components/TabBar";
 import { useIntakeRecords } from "@/hooks/useIntakeRecords";
 import { useNow } from "@/hooks/useNow";
 import { groupKey } from "@/lib/caffeine";
-import { formatDateLabel, formatTime } from "@/lib/datetime";
+import { formatDateLabel, formatTime, isBedtime } from "@/lib/datetime";
 import {
   buildHistoryDayGroups,
   buildHistoryDrinkBreakdown,
@@ -36,12 +36,17 @@ export default function HistoryList() {
   const [customError, setCustomError] = useState<string | null>(null);
   const [filterKey, setFilterKey] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
+  const [timeDraft, setTimeDraft] = useState("");
+  const [initialTime, setInitialTime] = useState("");
+  const [timeError, setTimeError] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [visibleGroupCount, setVisibleGroupCount] = useState(GROUP_PAGE_SIZE);
 
   const loading = !now || intake.status === "loading";
-  const broken = intake.status === "error";
+  // 保存失敗時はメモリ上の既存記録を保ったまま、展開中の行で再試行できるようにする。
+  const broken = intake.status === "error" && intake.records.length === 0;
   const ready = !loading && !broken;
   const rangeResult = ready
     ? getHistoryRange(period, now!, period === "custom" ? appliedCustom ?? undefined : undefined)
@@ -60,6 +65,7 @@ export default function HistoryList() {
 
   function resetTransientState() {
     setVisibleGroupCount(GROUP_PAGE_SIZE);
+    cancelTimeEdit();
     setPendingDeleteId(null);
     setDeleteError(null);
   }
@@ -101,11 +107,13 @@ export default function HistoryList() {
 
   function toggleEditMode() {
     setEditMode((prev) => !prev);
+    cancelTimeEdit();
     setPendingDeleteId(null);
     setDeleteError(null);
   }
 
   function requestDelete(id: string) {
+    cancelTimeEdit();
     setPendingDeleteId(id);
     setDeleteError(null);
   }
@@ -121,6 +129,36 @@ export default function HistoryList() {
       setDeleteError(null);
     } else {
       setDeleteError("削除できませんでした。もう一度お試しください。");
+    }
+  }
+
+  function startTimeEdit(id: string, consumedAt: string) {
+    const currentTime = formatTime(new Date(consumedAt));
+    setEditingTimeId(id);
+    setTimeDraft(currentTime);
+    setInitialTime(currentTime);
+    setTimeError(null);
+    setPendingDeleteId(null);
+    setDeleteError(null);
+  }
+
+  function cancelTimeEdit() {
+    setEditingTimeId(null);
+    setTimeDraft("");
+    setInitialTime("");
+    setTimeError(null);
+  }
+
+  function saveTime(id: string) {
+    if (!isBedtime(timeDraft) || timeDraft === initialTime) return;
+    try {
+      if (intake.updateRecordTime(id, timeDraft)) {
+        cancelTimeEdit();
+      } else {
+        setTimeError("保存できませんでした。入力内容は保持しています。もう一度お試しください。");
+      }
+    } catch {
+      setTimeError("保存できませんでした。入力内容は保持しています。もう一度お試しください。");
     }
   }
 
@@ -249,7 +287,39 @@ export default function HistoryList() {
                   <ul className="flex flex-col gap-px overflow-hidden rounded-radius-16 bg-border-subtle">
                     {group.records.map((record) => (
                       <li key={record.id} className="bg-surface-row">
-                        {pendingDeleteId === record.id ? (
+                        {editingTimeId === record.id ? (
+                          <div className="px-space-16 py-space-14">
+                            <div className="mb-space-12 flex items-baseline justify-between gap-space-10">
+                              <span className="min-w-0 flex-1 break-words text-size-14">{record.name}</span>
+                              <span className="shrink-0 font-mono text-size-13 text-text-tertiary">{displayMg(record.caffeineMg)} mg</span>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-space-10">
+                              <label htmlFor={`history-time-${record.id}`} className="text-size-13 text-text-secondary">摂取時刻</label>
+                              <input
+                                id={`history-time-${record.id}`}
+                                type="time"
+                                required
+                                value={timeDraft}
+                                aria-invalid={!isBedtime(timeDraft)}
+                                onChange={(event) => {
+                                  setTimeDraft(event.target.value);
+                                  setTimeError(null);
+                                }}
+                                className={`min-w-0 rounded-radius-10 border border-border-strong bg-surface-card px-space-10 py-space-8 font-mono text-size-15 text-text-primary ${focus}`}
+                              />
+                              <div className="ml-auto flex shrink-0 items-center gap-space-8">
+                                <button type="button" onClick={cancelTimeEdit} className={`rounded-radius-5 py-space-5 text-size-13 text-text-tertiary ${focus}`}>キャンセル</button>
+                                <button
+                                  type="button"
+                                  disabled={!isBedtime(timeDraft) || timeDraft === initialTime}
+                                  onClick={() => saveTime(record.id)}
+                                  className={`rounded-radius-99 bg-accent px-space-14 py-space-6 text-size-13 font-semibold text-bg-base disabled:opacity-40 ${focus}`}
+                                >保存</button>
+                              </div>
+                            </div>
+                            {timeError && <p role="alert" className="mt-space-10 text-size-12 leading-[1.45] text-danger">{timeError}</p>}
+                          </div>
+                        ) : pendingDeleteId === record.id ? (
                           <div className="flex items-center justify-between gap-space-10 px-space-16 py-space-14">
                             <p className="min-w-0 flex-1 text-size-13 text-text-secondary">
                               本当に削除しますか？
@@ -262,7 +332,16 @@ export default function HistoryList() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-space-14 px-space-16 py-space-14">
-                            <time dateTime={record.consumedAt} className="w-[42px] shrink-0 font-mono text-size-13 text-text-tertiary">{formatTime(new Date(record.consumedAt))}</time>
+                            {editMode ? (
+                              <button
+                                type="button"
+                                onClick={() => startTimeEdit(record.id, record.consumedAt)}
+                                aria-label={`${record.name}の摂取時刻${formatTime(new Date(record.consumedAt))}を編集`}
+                                className={`w-[42px] shrink-0 rounded-radius-5 py-space-5 text-left font-mono text-size-13 text-accent underline decoration-accent/40 underline-offset-4 ${focus}`}
+                              >{formatTime(new Date(record.consumedAt))}</button>
+                            ) : (
+                              <time dateTime={record.consumedAt} className="w-[42px] shrink-0 font-mono text-size-13 text-text-tertiary">{formatTime(new Date(record.consumedAt))}</time>
+                            )}
                             <span className="min-w-0 flex-1 break-words text-size-15">{record.name}</span>
                             <span className="max-w-[40%] break-all text-right font-mono text-size-15">{displayMg(record.caffeineMg)}<span className="text-size-11 text-text-tertiary"> mg</span></span>
                             {editMode && (

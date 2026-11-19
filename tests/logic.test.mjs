@@ -62,6 +62,18 @@ test("manual intake record keeps the entered amount and null preset while trimmi
   });
 });
 
+test("saved intake time can change within its local day without changing other fields", () => {
+  const original = record("2026-11-09T23:45:31.456");
+  const updated = intake.replaceIntakeRecordTime(original, "00:15");
+  assert.deepEqual(updated, {
+    ...original,
+    consumedAt: date("2026-11-09T00:15:00.000").toISOString(),
+  });
+  assert.equal(intake.replaceIntakeRecordTime(original, ""), null);
+  assert.equal(intake.replaceIntakeRecordTime(original, "24:00"), null);
+  assert.equal(intake.replaceIntakeRecordTime({ ...original, consumedAt: "invalid" }, "12:00"), null);
+});
+
 test("residual includes exact intake instant, halves in 5h, excludes future", () => {
   const records = [record("2026-09-16T08:00:00Z")];
   assert.equal(caffeine.calculateResidualMg([], date("2026-09-16")), 0);
