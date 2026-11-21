@@ -1,5 +1,9 @@
 # 履歴画面（3-4）の画面エビデンス
 
+> [!NOTE]
+> このディレクトリは、表示範囲が直近1週間に固定されていた旧仕様（フェーズ3-4）の画面エビデンスです。
+> 「1週間／1か月／期間指定」に対応した現行画面のエビデンスは、[履歴画面の表示期間切り替え（Issue #29）](../history-date-range/README.md)を参照してください。
+
 - 撮影日: 2026-09-23
 - 対象実装: `components/HistoryList.tsx` / `app/history/page.tsx`（フェーズ3-4 履歴）
 - 環境: Chrome、402 × 950px、`npm run dev`（Turbopack）

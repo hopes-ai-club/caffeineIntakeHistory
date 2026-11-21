@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 const load = (path) => require(join(process.env.LOGIC_BUILD_DIR, path));
 const caffeine = load("lib/caffeine.js");
 const datetime = load("lib/datetime.js");
+const history = load("lib/history.js");
 const intake = load("lib/intake.js");
 const stats = load("lib/stats.js");
 const storage = load("lib/storage.js");
@@ -204,6 +205,69 @@ test("quick add candidates rank by 7-day frequency, break ties by recency and us
   ]);
   assert.equal(caffeine.getQuickAddCandidates(records, now, 0).length, 0);
   assert.equal(caffeine.getQuickAddCandidates([], now).length, 0);
+});
+
+test("history preset periods use inclusive local calendar days and exclude future records", () => {
+  const now = date("2026-09-16T12:00:00");
+  const week = history.getHistoryRange("week", now);
+  assert.equal(week.ok, true);
+  assert.equal(datetime.toDatetimeLocal(week.range.start), "2026-09-10T00:00");
+  assert.equal(datetime.toDatetimeLocal(week.range.end), "2026-09-16T12:00");
+
+  const month = history.getHistoryRange("month", now);
+  assert.equal(month.ok, true);
+  assert.equal(datetime.toDatetimeLocal(month.range.start), "2026-08-18T00:00");
+  const selected = history.filterHistoryRecords([
+    record("2026-08-17T23:59:59"),
+    record("2026-08-18T00:00:00", 10),
+    record("2026-09-16T12:00:00", 20),
+    record("2026-09-16T12:00:01", 30),
+  ], month.range);
+  assert.deepEqual(selected.map((item) => item.caffeineMg), [10, 20]);
+});
+
+test("history custom range validates input and includes both local dates", () => {
+  const now = date("2026-09-16T12:00:00");
+  assert.deepEqual(history.getHistoryRange("custom", now, { startDate: "", endDate: "" }), {
+    ok: false, error: "開始日と終了日を選択してください。",
+  });
+  assert.equal(history.getHistoryRange("custom", now, { startDate: "2026-09-17", endDate: "2026-09-16" }).error,
+    "開始日は終了日以前にしてください。");
+  assert.equal(history.getHistoryRange("custom", now, { startDate: "2026-09-16", endDate: "2026-09-17" }).error,
+    "終了日は今日以前にしてください。");
+  assert.equal(history.getHistoryRange("custom", now, { startDate: "2026-02-30", endDate: "2026-09-16" }).error,
+    "有効な日付を選択してください。");
+
+  const result = history.getHistoryRange("custom", now, { startDate: "2026-09-14", endDate: "2026-09-15" });
+  assert.equal(result.ok, true);
+  assert.equal(datetime.toDatetimeLocal(result.range.start), "2026-09-14T00:00");
+  const selected = history.filterHistoryRecords([
+    record("2026-09-13T23:59:59", 1),
+    record("2026-09-14T00:00:00", 2),
+    record("2026-09-15T23:59:59.999", 3),
+    record("2026-09-16T00:00:00", 4),
+  ], result.range);
+  assert.deepEqual(selected.map((item) => item.caffeineMg), [2, 3]);
+});
+
+test("history groups and drink filters are newest-first without mutating records", () => {
+  const now = date("2026-09-16T12:00:00");
+  const records = [
+    record("2026-09-15T08:00:00", 30, { presetId: null, name: " 緑茶 " }),
+    record("2026-09-16T08:00:00", 90, { presetId: "coffee", name: "コーヒー" }),
+    record("2026-09-15T10:00:00", 20, { presetId: null, name: "緑茶" }),
+  ];
+  const before = JSON.stringify(records);
+  const groups = history.buildHistoryDayGroups(records, now);
+  assert.deepEqual(groups.map((group) => [history.toDateInputValue(group.date), group.totalMg]), [
+    ["2026-09-16", 90], ["2026-09-15", 50],
+  ]);
+  assert.equal(groups[0].isToday, true);
+  assert.deepEqual(groups[1].records.map((item) => item.caffeineMg), [20, 30]);
+  assert.deepEqual(history.buildHistoryDrinkBreakdown(records).map((item) => [item.key, item.count, item.totalMg]), [
+    ["preset:coffee", 1, 90], ["manual:緑茶", 2, 50],
+  ]);
+  assert.equal(JSON.stringify(records), before);
 });
 
 test("stats periods use inclusive local calendar days and exclude records outside the current instant", () => {

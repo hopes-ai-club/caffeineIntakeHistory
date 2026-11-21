@@ -26,6 +26,7 @@
 | 未検証事項 | Claude Code CLIが環境に導入されていないため、Claude Code実環境でのSkill選択と確認動作は未検証。ログ作成を拒否した場合、作業ユーザーの既存ログがない場合、形式を一意に判定できない場合の対話動作は実環境では未検証。アプリコードを変更していないため、`npm test`、`npm run lint`、型チェック、buildは未実施。 |
 | 根拠コミット | `ee44bf4` — feat: automate AI usage log recording |
 | Issue | [#38 — 作業完了時のAI活用ログ記録を自動化する](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/38) |
+| Pull Request | [#44 — feat: AI活用ログの記録確認を作業完了フローへ追加](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/44) |
 
 ## 2026-11-09 〜 2026-11-15
 
@@ -62,6 +63,28 @@
 | 所要時間 | 未計測 |
 | 学び | 脆弱性Issueは調査日から時間が経つと、修正版だけでなく新しいLTS、追加アドバイザリ、依存経路も変わるため、実装直前に本番依存と開発依存を分けて再監査する必要がある。上流がまだ安全な依存範囲を公開していない場合でも、影響経路と利用APIを限定して確認し、互換性テストを伴うnpm overrideを適用することで、無関係な依存へ影響を広げずに監査結果を解消できる。 |
 | 実施した検証 | Node.js 24.22.3公式配布物のSHA-256一致を確認し、その環境で`npm ci`、完全な`npm audit`、`npm audit --omit=dev`、`npm run lint`相当、`npm test`、`npx tsc --noEmit`相当、Webpack本番ビルド、依存ツリー確認、`git diff --check`が成功した。テストはAsia/TokyoとAmerica/New_Yorkで各19件成功した。ビルド済みアプリをNode.js 24.22.3で起動し、今日・履歴・統計・設定の4画面、`manifest.json`、`sw.js`がHTTP 200で応答することを確認した。通常作業分のコミット`4cef897`とNode 24系へ揃える追加コミット`7fbf4de`をoriginへpushした。 |
-| 未検証事項 | 標準の`npm run build`はTurbopackがローカルポートを開けない実行環境制限により未完了。Vercelの実際のNode.jsパッチ版、Build Logs、プレビュー・本番デプロイ、本番4画面とPWA起動は未確認。Issue #35のGitHub Actions設定は未実装のため、CI上のNode.js 24.22.3実行は未検証。Pull Requestは未作成。 |
+| 未検証事項 | 標準の`npm run build`はTurbopackがローカルポートを開けない実行環境制限により未完了。Vercelの実際のNode.jsパッチ版、Build Logs、プレビュー・本番デプロイ、本番4画面とPWA起動は未確認。Issue #35のGitHub Actions設定は未実装のため、CI上のNode.js 24.22.3実行は未検証。 |
 | 根拠コミット | `4cef897` — chore: update vulnerable dependencies<br>`7fbf4de` — chore: align Node.js with CI runtime |
 | Issue | [#41 — Node.jsとnpm依存関係を脆弱性修正版へ更新する](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/41) |
+| Pull Request | [#61 — chore: Node.jsと依存関係を脆弱性修正版へ更新](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/61) |
+
+## 2026-11-16 〜 2026-11-22
+
+### 2026-11-18 — 履歴の1週間・1か月・期間指定表示
+
+| 項目 | 内容 |
+|---|---|
+| 日付 | 2026-11-18 |
+| 工程 | 調査／設計／実装／テスト／画面検証／文書化 |
+| ツール | Codex |
+| タスク概要 | Issue #29に基づき、履歴画面の表示期間を初期値の「1週間」、今日を含む直近30ローカル日の「1か月」、開始日・終了日を両端とも含む「期間指定」から選べるようにした。期間指定は明示的に適用し、開始日が終了日より後などの不正な入力では現在の表示を維持して理由を表示する。選択期間内の記録をローカル日付・摂取時刻の新しい順で表示し、飲み物フィルターの選択状態を期間変更後も維持する。長期範囲は日付グループを30件ずつ段階表示し、既存の確認付き削除、読み込み中・空・エラー状態を維持した。純粋な期間抽出・日付グループ・飲み物内訳ロジックとテストを追加し、`CLAUDE.md`へ確定仕様を反映した。追加依頼では`docs/evidence/history-date-range/`にモバイル・デスクトップの画面エビデンス6枚とREADMEを追加し、旧`history-list`エビデンスには旧仕様であることと現行エビデンスへのリンクを追記した。 |
+| 採用状況 | 採用（実装・テスト・SSoT更新・画面エビデンスを通常作業コミットとして反映） |
+| プロンプトの要点 | GitHub Issue #29の対応として、履歴の「1週間／1か月／期間指定」切り替え、ローカル日付境界、期間内の新しい順表示、飲み物フィルター、確認付き削除、不正期間・空・読み込みエラー状態、長期データの操作性、テスト、SSoT更新を依頼された。実装後に`docs/evidence`配下へ画面スクリーンショットを追加し、旧画面のエビデンスは削除せず旧仕様の証跡として後継リンクを付けるよう追加で依頼された。Git操作は`git-workflow` Skillに従い、各コミット前に明示的な確認を挟んだ。 |
+| 手戻り・誤り | GitHub CLIの認証が期限切れだったため、通常作業のpush前にWebデバイス認証で復旧した。共有Chromeの操作APIがタブ作成・選択時に内部エラーとなったため、Skillの代替手順に従ってheadless ChromeとDevTools Protocolによる再現可能な検証へ切り替えた。最初のheadless確認は`127.0.0.1`からNext.js開発リソースへのクロスオリジン制限でハイドレーションが進まなかったため、`localhost`へ統一して再実行した。`next dev`が`AGENTS.md`へ自動追記した対象外差分は、サーバー停止後に除去した。エビデンスの不正期間画面はフォーカス追従で上端がずれたため、入力のフォーカス解除とスクロール安定待機を追加して再撮影した。 |
+| 所要時間 | 未計測 |
+| 学び | 履歴期間はミリ秒固定幅ではなくローカル暦日の加減算で求めるとDSTをまたいでも日付境界を維持できる。期間入力の下書きと適用済み条件を分けることで、不正入力時に現在の結果を失わず理由を表示できる。画面エビデンスは旧画像を上書き・削除せず、撮影時点と対象コミットを明記した新しい証跡を追加し、旧READMEから後継へリンクすると過去の監査性と現行画面への導線を両立できる。 |
+| 実施した検証 | `npm test`がAsia/TokyoとAmerica/New_Yorkで各24件成功し、`npm run lint`、`npx tsc --noEmit`、`npm run build`、`git diff --check`が成功した。ユーザーのローカルターミナルでも`npm run build`成功の報告を受けた。ブラウザ自動検証では375pxで1週間から1か月への切り替え、飲み物フィルター、不正期間の理由表示、45日範囲の古い記録、削除確認のキャンセルを確認し、375px・1280pxで横スクロールがないことを確認した。エビデンス撮影では架空の6記録を使い、402pxで1週間3件、1か月5件、フィルター2件、不正期間、40日前の記録と削除確認を確認し、1280pxを含めて横方向のオーバーフローがないことを確認した。PNG6枚の形式・寸法、READMEの画像参照、旧READMEから現行エビデンスへのリンクも確認した。 |
+| 未検証事項 | 共有Chrome操作APIの内部エラーにより、同API上の可視ブラウザセッションでは未確認。代わりにローカルのChrome本体をheadlessで操作して主要フローとレイアウトを検証した。読み込み失敗状態と実際の削除確定は今回の画面エビデンスには含めていない。 |
+| 根拠コミット | `0d37bcb` — feat: add selectable history date ranges<br>`d861b4e` — docs: add history date range evidence |
+| Issue | [#29 — 履歴：1週間・1か月・期間指定で過去の記録を確認できるようにする](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/29) |
+| Pull Request | [#62 — feat: 履歴の表示期間切り替えと期間指定に対応](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/62) |
