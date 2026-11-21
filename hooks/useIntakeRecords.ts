@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 import type { IntakeRecord } from "../types";
-import { createIntakeRecord, type NewIntakeRecordData } from "../lib/intake";
+import { createIntakeRecord, replaceIntakeRecordTime, type NewIntakeRecordData } from "../lib/intake";
 import { loadIntakeRecords, saveIntakeRecords, type StorageResult } from "../lib/storage";
 
 type StorageError = Extract<StorageResult<IntakeRecord[]>, { ok: false }>["error"];
@@ -64,6 +64,8 @@ export type NewIntakeRecordInput = NewIntakeRecordData;
 export interface UseIntakeRecordsResult extends RecordsSnapshot {
   /** 保存に成功すれば追加された記録を、失敗すれば null を返す。 */
   addRecord: (input: NewIntakeRecordInput) => IntakeRecord | null;
+  /** 対象IDが存在し、同じローカル日付内の有効な時刻を保存できれば true を返す。 */
+  updateRecordTime: (id: string, time: string) => boolean;
   /** 対象IDが存在し保存にも成功すれば true を返す。 */
   removeRecord: (id: string) => boolean;
 }
@@ -80,11 +82,21 @@ export function useIntakeRecords(): UseIntakeRecordsResult {
     return write([...snapshot.records, record]) ? record : null;
   }, []);
 
+  const updateRecordTime = useCallback((id: string, time: string): boolean => {
+    const index = snapshot.records.findIndex((record) => record.id === id);
+    if (index < 0) return false;
+    const updated = replaceIntakeRecordTime(snapshot.records[index], time);
+    if (!updated) return false;
+    const next = [...snapshot.records];
+    next[index] = updated;
+    return write(next);
+  }, []);
+
   const removeRecord = useCallback((id: string): boolean => {
     const next = snapshot.records.filter((record) => record.id !== id);
     if (next.length === snapshot.records.length) return false;
     return write(next);
   }, []);
 
-  return { records, status, error, addRecord, removeRecord };
+  return { records, status, error, addRecord, updateRecordTime, removeRecord };
 }

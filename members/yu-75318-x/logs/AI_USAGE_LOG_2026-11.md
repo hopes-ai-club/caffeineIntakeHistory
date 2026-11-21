@@ -88,3 +88,22 @@
 | 根拠コミット | `0d37bcb` — feat: add selectable history date ranges<br>`d861b4e` — docs: add history date range evidence |
 | Issue | [#29 — 履歴：1週間・1か月・期間指定で過去の記録を確認できるようにする](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/29) |
 | Pull Request | [#62 — feat: 履歴の表示期間切り替えと期間指定に対応](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/62) |
+
+### 2026-11-19 — 履歴の摂取時刻編集対応
+
+| 項目 | 内容 |
+|---|---|
+| 日付 | 2026-11-19 |
+| 工程 | 調査／設計／実装／テスト／画面検証／文書化 |
+| ツール | Codex |
+| タスク概要 | Issue #18に基づき、履歴画面の編集モードで保存済み記録の摂取時刻だけを同じローカル日付内で変更できるようにした。時刻を選ぶと対象行だけを`input type="time"`、キャンセル、保存へ展開し、削除確認とは排他的に制御する。時刻変更は純粋関数で妥当性と同日性を検証し、`useIntakeRecords`の更新経路からlocalStorageへ保存する。保存成功後は時刻順を再計算し、保存失敗時は入力値と編集状態を保持して行内にエラーを表示する。`CLAUDE.md`へ確定仕様を反映し、`docs/evidence/history-time-edit/`へ375px・402px・1280pxの編集画面、保存後の並び替え、保存失敗時の入力保持を示すPNG5枚とREADMEを追加した。PR #62と`HistoryList.tsx`および`CLAUDE.md`が重なるため、`feat/history-date-range-29`を土台とするstacked branch `feat/edit-intake-time-18`で実装した。 |
+| 採用状況 | 採用（実装・テスト・SSoT更新・画面エビデンスを通常作業コミットとして反映） |
+| プロンプトの要点 | GitHub Issue #18への対応として、日付を変えずに摂取時刻だけを編集できるUI、同時に1行だけ展開する排他制御、保存失敗時の入力保持、関連画面への即時反映、入力検証、テストを依頼された。未マージPRとの競合を避ける方法とstacked PRの利用可否も相談され、実装後には画面スクリーンショットをエビデンスとして残すよう追加依頼された。Git操作は`git-workflow` Skillに従い、コミット前に明示的な確認を挟んだ。 |
+| 手戻り・誤り | サンドボックス内ではGitHub API接続とGitHub CLI認証確認が失敗したため、許可付きの外部接続でIssueと未マージPRを取得した。共有Chromeのタブ選択APIが内部エラーとなったため、Chromeのネイティブ操作で主要フローを確認し、再現可能なエビデンスは隔離プロファイルのheadless ChromeとDevTools Protocolで撮影した。`next dev`が`AGENTS.md`へNext.jsルールを自動追記したため、サーバー停止後に対象外差分を除去した。 |
+| 所要時間 | 未計測 |
+| 学び | 同じUIファイルを変更する未マージPRが先行する場合、そのブランチをbaseとするstacked PRにすると、古い`main`へ同じ変更を別実装して競合を増やさずに済む。時刻編集は`HH:mm`と元レコードを受け取る純粋関数へ分離し、ローカル日付の一致とDST補正後の時刻一致を確認すると、UI外から日付が変わる経路も防げる。保存失敗時にメモリ上の既存記録を保つ設計と行内の下書き状態を組み合わせることで、再入力を求めず再試行できる。 |
+| 実施した検証 | `npm test`がAsia/TokyoとAmerica/New_Yorkで各25件成功し、`npm run lint`、`npx tsc --noEmit`、`npm run build`、`git diff --check`が成功した。ブラウザで編集時の初期値、空欄時の保存無効化、キャンセル、保存後の時刻と並び順、フィルター維持、ホームの合計・残量、ピーク、就寝時残量への反映、localStorage書き込み失敗時の入力保持と行内エラーを確認した。エビデンス撮影では隔離した一時Chromeプロファイルと架空記録2件を使い、375px・402px・1280pxで横方向のオーバーフローがないこと、保存後の並び替え、保存失敗表示、コンソール警告・エラー0件を確認した。PNG5枚の形式・寸法とREADMEの画像参照も確認した。 |
+| 未検証事項 | 実データの削除確定操作と実機スマートフォンでの表示は未検証。Pull Requestはログ作成時点では未作成。 |
+| 根拠コミット | `88cb93d` — feat: add intake time editing to history |
+| Issue | [#18 — 履歴：摂取時刻の編集機能（同日内のみ）を追加したい](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/18) |
+| Pull Request | 未作成（PR #62をbaseとするstacked PRを予定） |
