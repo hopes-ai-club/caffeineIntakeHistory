@@ -371,8 +371,3 @@ test("SSR, access denial and quota failures are explicit", () => {
   try { assert.equal(storage.loadSettings().error, "unavailable"); }
   finally { delete globalThis.window; }
 });
-
-// CI失敗確認用（Issue #35）: 意図的に失敗させるテスト。確認後に削除する。
-test("CI失敗確認用: 意図的に失敗させる", () => {
-  assert.equal(1, 2);
-});
