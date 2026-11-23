@@ -2,11 +2,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 
 // 追加依存なしでTSを一時ディレクトリへコンパイルし、Node標準テストで検証する。
+// npm workspaces では typescript がルートの node_modules に置かれるため、パッケージ解決で tsc を探す。
+const tsc = createRequire(import.meta.url).resolve("typescript/bin/tsc");
 const output = mkdtempSync(join(tmpdir(), "caffeine-tests-"));
 try {
-  const compile = spawnSync(process.execPath, ["node_modules/typescript/bin/tsc",
+  const compile = spawnSync(process.execPath, [tsc,
     "--outDir", output, "--module", "commonjs", "--target", "ES2020", "--strict", "--skipLibCheck",
     "lib/caffeine.ts", "lib/datetime.ts", "lib/history.ts", "lib/intake.ts", "lib/stats.ts", "lib/storage.ts", "data/presets.ts",
   ], { stdio: "inherit" });

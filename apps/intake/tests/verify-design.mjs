@@ -1,7 +1,7 @@
 // Optional local check: npm install --no-save --package-lock=false playwright
 // npx playwright install chromium
-// Terminal 1: npm run dev
-// Terminal 2: node tests/verify-design.mjs
+// Terminal 1 (repository root): npm run dev:intake
+// Terminal 2 (repository root): node apps/intake/tests/verify-design.mjs
 // Scope: TODO 3-0 foundation sample, not the completed home screen.
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
