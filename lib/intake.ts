@@ -1,4 +1,5 @@
 import type { IntakeRecord } from "../types";
+import { formatTime, isBedtime, isSameDay } from "./datetime";
 
 export interface NewIntakeRecordData {
   /** 手動入力の場合は null。 */
@@ -30,6 +31,21 @@ export function createIntakeRecord(input: NewIntakeRecordData, id: string): Inta
     caffeineMg: input.caffeineMg,
     consumedAt: input.consumedAt,
   };
+}
+
+/** 保存済みのローカル日付を保ったまま、現在以前の分精度の時刻だけへ置き換える。 */
+export function replaceIntakeRecordTime(record: IntakeRecord, time: string, now = new Date()): IntakeRecord | null {
+  if (!isBedtime(time)) return null;
+  const original = new Date(record.consumedAt);
+  if (!Number.isFinite(original.getTime()) || !Number.isFinite(now.getTime())) return null;
+
+  const [hours, minutes] = time.split(":").map(Number);
+  const updated = new Date(original);
+  updated.setHours(hours, minutes, 0, 0);
+
+  // DSTで存在しないローカル時刻はsetHoursが補正するため、入力値との一致も確認する。
+  if (!isSameDay(original, updated) || formatTime(updated) !== time || updated.getTime() > now.getTime()) return null;
+  return { ...record, consumedAt: updated.toISOString() };
 }
 
 /** 入力フォームの文字列を、保存可能な飲料名と正のカフェイン量へ検証・変換する。 */
