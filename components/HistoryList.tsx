@@ -5,7 +5,7 @@ import TabBar from "@/components/TabBar";
 import { useIntakeRecords } from "@/hooks/useIntakeRecords";
 import { useNow } from "@/hooks/useNow";
 import { groupKey } from "@/lib/caffeine";
-import { formatDateLabel, formatTime, isBedtime } from "@/lib/datetime";
+import { formatDateLabel, formatTime, isBedtime, isSameDay } from "@/lib/datetime";
 import {
   buildHistoryDayGroups,
   buildHistoryDrinkBreakdown,
@@ -20,6 +20,8 @@ const focus = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const displayMg = (mg: number) => Math.round(mg).toLocaleString("ja-JP");
 const formatShortDate = (date: Date) => `${date.getMonth() + 1}/${date.getDate()}`;
 const GROUP_PAGE_SIZE = 30;
+const TIME_HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, "0"));
+const TIME_MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, "0"));
 const PERIODS: ReadonlyArray<{ value: HistoryPeriod; label: string }> = [
   { value: "week", label: "1週間" },
   { value: "month", label: "1か月" },
@@ -62,6 +64,22 @@ export default function HistoryList() {
     : dayGroups;
   const visibleGroups = filteredGroups.slice(0, visibleGroupCount);
   const hasMore = visibleGroups.length < filteredGroups.length;
+  const editingRecord = editingTimeId
+    ? intake.records.find((record) => record.id === editingTimeId) ?? null
+    : null;
+  const timeDraftMax = now && editingRecord && isSameDay(new Date(editingRecord.consumedAt), now)
+    ? formatTime(now)
+    : null;
+  const [timeDraftHour = "", timeDraftMinute = ""] = timeDraft.split(":");
+  const [timeDraftMaxHour, timeDraftMaxMinute] = timeDraftMax?.split(":") ?? [];
+  const selectableHours = timeDraftMaxHour
+    ? TIME_HOURS.filter((hour) => hour <= timeDraftMaxHour)
+    : TIME_HOURS;
+  const selectableMinutes = timeDraftMaxHour === timeDraftHour && timeDraftMaxMinute
+    ? TIME_MINUTES.filter((minute) => minute <= timeDraftMaxMinute)
+    : TIME_MINUTES;
+  const timeDraftIsFuture = Boolean(timeDraftMax && isBedtime(timeDraft) && timeDraft > timeDraftMax);
+  const timeDraftIsValid = isBedtime(timeDraft) && !timeDraftIsFuture;
 
   function resetTransientState() {
     setVisibleGroupCount(GROUP_PAGE_SIZE);
@@ -149,8 +167,21 @@ export default function HistoryList() {
     setTimeError(null);
   }
 
+  function changeTimeHour(hour: string) {
+    const minute = hour === timeDraftMaxHour && timeDraftMaxMinute && timeDraftMinute > timeDraftMaxMinute
+      ? timeDraftMaxMinute
+      : timeDraftMinute;
+    setTimeDraft(`${hour}:${minute}`);
+    setTimeError(null);
+  }
+
+  function changeTimeMinute(minute: string) {
+    setTimeDraft(`${timeDraftHour}:${minute}`);
+    setTimeError(null);
+  }
+
   function saveTime(id: string) {
-    if (!isBedtime(timeDraft) || timeDraft === initialTime) return;
+    if (!timeDraftIsValid || timeDraft === initialTime) return;
     try {
       if (intake.updateRecordTime(id, timeDraft)) {
         cancelTimeEdit();
@@ -294,24 +325,37 @@ export default function HistoryList() {
                               <span className="shrink-0 font-mono text-size-13 text-text-tertiary">{displayMg(record.caffeineMg)} mg</span>
                             </div>
                             <div className="flex flex-wrap items-center justify-between gap-space-10">
-                              <label htmlFor={`history-time-${record.id}`} className="text-size-13 text-text-secondary">摂取時刻</label>
-                              <input
-                                id={`history-time-${record.id}`}
-                                type="time"
-                                required
-                                value={timeDraft}
-                                aria-invalid={!isBedtime(timeDraft)}
-                                onChange={(event) => {
-                                  setTimeDraft(event.target.value);
-                                  setTimeError(null);
-                                }}
-                                className={`min-w-0 rounded-radius-10 border border-border-strong bg-surface-card px-space-10 py-space-8 font-mono text-size-15 text-text-primary ${focus}`}
-                              />
+                              <span id={`history-time-label-${record.id}`} className="text-size-13 text-text-secondary">摂取時刻</span>
+                              <div
+                                role="group"
+                                aria-labelledby={`history-time-label-${record.id}`}
+                                className="flex items-center gap-space-4 font-mono text-size-15 text-text-primary"
+                              >
+                                <select
+                                  value={timeDraftHour}
+                                  aria-label="時"
+                                  aria-invalid={!timeDraftIsValid}
+                                  onChange={(event) => changeTimeHour(event.target.value)}
+                                  className={`w-[54px] rounded-radius-10 border border-border-strong bg-surface-card px-space-6 py-space-8 ${focus}`}
+                                >
+                                  {selectableHours.map((hour) => <option key={hour} value={hour}>{hour}</option>)}
+                                </select>
+                                <span aria-hidden="true">:</span>
+                                <select
+                                  value={timeDraftMinute}
+                                  aria-label="分"
+                                  aria-invalid={!timeDraftIsValid}
+                                  onChange={(event) => changeTimeMinute(event.target.value)}
+                                  className={`w-[54px] rounded-radius-10 border border-border-strong bg-surface-card px-space-6 py-space-8 ${focus}`}
+                                >
+                                  {selectableMinutes.map((minute) => <option key={minute} value={minute}>{minute}</option>)}
+                                </select>
+                              </div>
                               <div className="ml-auto flex shrink-0 items-center gap-space-8">
                                 <button type="button" onClick={cancelTimeEdit} className={`rounded-radius-5 py-space-5 text-size-13 text-text-tertiary ${focus}`}>キャンセル</button>
                                 <button
                                   type="button"
-                                  disabled={!isBedtime(timeDraft) || timeDraft === initialTime}
+                                  disabled={!timeDraftIsValid || timeDraft === initialTime}
                                   onClick={() => saveTime(record.id)}
                                   className={`rounded-radius-99 bg-accent px-space-14 py-space-6 text-size-13 font-semibold text-bg-base disabled:opacity-40 ${focus}`}
                                 >保存</button>

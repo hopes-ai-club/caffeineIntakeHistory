@@ -33,18 +33,18 @@ export function createIntakeRecord(input: NewIntakeRecordData, id: string): Inta
   };
 }
 
-/** 保存済みのローカル日付を保ったまま、分精度の時刻だけを置き換える。 */
-export function replaceIntakeRecordTime(record: IntakeRecord, time: string): IntakeRecord | null {
+/** 保存済みのローカル日付を保ったまま、現在以前の分精度の時刻だけへ置き換える。 */
+export function replaceIntakeRecordTime(record: IntakeRecord, time: string, now = new Date()): IntakeRecord | null {
   if (!isBedtime(time)) return null;
   const original = new Date(record.consumedAt);
-  if (!Number.isFinite(original.getTime())) return null;
+  if (!Number.isFinite(original.getTime()) || !Number.isFinite(now.getTime())) return null;
 
   const [hours, minutes] = time.split(":").map(Number);
   const updated = new Date(original);
   updated.setHours(hours, minutes, 0, 0);
 
   // DSTで存在しないローカル時刻はsetHoursが補正するため、入力値との一致も確認する。
-  if (!isSameDay(original, updated) || formatTime(updated) !== time) return null;
+  if (!isSameDay(original, updated) || formatTime(updated) !== time || updated.getTime() > now.getTime()) return null;
   return { ...record, consumedAt: updated.toISOString() };
 }
 

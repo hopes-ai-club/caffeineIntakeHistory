@@ -1,0 +1,49 @@
+{
+  "capturedAt": "2026-11-24T12:05:26.038Z",
+  "currentLocalDate": "2026-11-24",
+  "currentLocalTime": "21:05",
+  "timezone": "Asia/Tokyo",
+  "timezoneOffsetMinutes": -540,
+  "screenshot": "history-time-future-options-402.png",
+  "hourOptions": [
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21"
+  ],
+  "minuteOptionsAtCurrentHour": [
+    "00",
+    "01",
+    "02",
+    "03",
+    "04",
+    "05"
+  ],
+  "assertions": {
+    "futureHourOptionCount": 0,
+    "futureMinuteOptionCount": 0,
+    "currentTimeSelectable": true,
+    "saveEnabledForCurrentTime": true,
+    "storageUnchangedBeforeSave": true,
+    "horizontalOverflow": false,
+    "consoleProblems": []
+  }
+}

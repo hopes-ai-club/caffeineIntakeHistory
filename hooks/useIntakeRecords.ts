@@ -64,7 +64,7 @@ export type NewIntakeRecordInput = NewIntakeRecordData;
 export interface UseIntakeRecordsResult extends RecordsSnapshot {
   /** 保存に成功すれば追加された記録を、失敗すれば null を返す。 */
   addRecord: (input: NewIntakeRecordInput) => IntakeRecord | null;
-  /** 対象IDが存在し、同じローカル日付内の有効な時刻を保存できれば true を返す。 */
+  /** 対象IDが存在し、同じローカル日付内かつ現在以前の有効な時刻を保存できれば true を返す。 */
   updateRecordTime: (id: string, time: string) => boolean;
   /** 対象IDが存在し保存にも成功すれば true を返す。 */
   removeRecord: (id: string) => boolean;
