@@ -62,6 +62,36 @@ test("manual intake record keeps the entered amount and null preset while trimmi
   });
 });
 
+test("saved intake time can change within its local day without changing other fields", () => {
+  const original = record("2026-11-09T23:45:31.456");
+  const now = date("2026-11-09T23:59:59.999");
+  const updated = intake.replaceIntakeRecordTime(original, "00:15", now);
+  assert.deepEqual(updated, {
+    ...original,
+    consumedAt: date("2026-11-09T00:15:00.000").toISOString(),
+  });
+  assert.equal(intake.replaceIntakeRecordTime(original, "", now), null);
+  assert.equal(intake.replaceIntakeRecordTime(original, "24:00", now), null);
+  assert.equal(intake.replaceIntakeRecordTime({ ...original, consumedAt: "invalid" }, "12:00", now), null);
+  assert.equal(intake.replaceIntakeRecordTime(original, "12:00", new Date(NaN)), null);
+});
+
+test("saved intake time cannot move into the future", () => {
+  const original = record("2026-11-24T08:00:00");
+  const now = date("2026-11-24T16:29:45");
+  assert.equal(intake.replaceIntakeRecordTime(original, "16:30", now), null);
+  assert.equal(
+    intake.replaceIntakeRecordTime(original, "16:29", now).consumedAt,
+    date("2026-11-24T16:29:00").toISOString(),
+  );
+
+  const previousDay = record("2026-11-23T08:00:00");
+  assert.equal(
+    intake.replaceIntakeRecordTime(previousDay, "23:59", now).consumedAt,
+    date("2026-11-23T23:59:00").toISOString(),
+  );
+});
+
 test("residual includes exact intake instant, halves in 5h, excludes future", () => {
   const records = [record("2026-09-16T08:00:00Z")];
   assert.equal(caffeine.calculateResidualMg([], date("2026-09-16")), 0);
