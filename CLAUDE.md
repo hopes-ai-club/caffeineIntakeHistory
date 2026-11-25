@@ -66,8 +66,8 @@
   ```
   /                          ワークスペース全体（package.json・package-lock.json・.nvmrc・CI・ドキュメント）
   ├─ apps/intake             摂取記録アプリ（PWA）。デザイン資料は apps/intake/design/
-  ├─ apps/master             飲み物マスタサービス（管理画面＋/v1/ API）※未作成
-  └─ packages/master-contract  API契約（OpenAPI）。アプリ間で共有するのはこれだけ ※未作成
+  ├─ apps/master             飲み物マスタサービス（管理画面＋/v1/ API）※ディレクトリのみ
+  └─ packages/master-contract  API契約（OpenAPI）。アプリ間で共有するのはこれだけ ※ディレクトリのみ
   ```
   - デザイン資料は各アプリの中に置く（例: `apps/intake/design/`）
   - npm scriptsはルートから実行する。ルートの `lint`・`test`・`typecheck`・`build` は、先に型生成（`generate`）を実行してから各ワークスペースの同名scriptを実行する（実行順: 型生成 → lint → test → build）
