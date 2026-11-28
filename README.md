@@ -2,13 +2,15 @@
 
 日々のカフェイン摂取を記録し、今日の総摂取量や体内の推定残存量を確認するためのWebアプリです。
 
-記録と設定はブラウザの `localStorage` に保存します。サーバーやデータベースは使用しません。
+記録と設定はブラウザの `localStorage` に保存します。摂取記録アプリ自体はサーバー側のデータベースを持ちません。
+
+リポジトリはnpm workspacesによるモノレポ構成で、摂取記録アプリは `apps/intake/` にあります。飲み物マスタを管理するマスタサービス（`apps/master/`）とAPI契約（`packages/master-contract/`）は今後追加予定です（[#48](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/48)）。
 
 ## 本番環境
 
 https://caffeine-intake-history.vercel.app/
 
-`main` ブランチへのpushに連動してVercelが自動でビルド・デプロイします（GitHub連携によるCD設定）。記録・設定はアクセスしたブラウザの `localStorage` に保存されるため、ブラウザや端末が変わると共有されません。
+`main` ブランチへのpushに連動してVercelが自動でビルド・デプロイします（GitHub連携によるCD設定）。VercelプロジェクトのRoot Directoryは `apps/intake` です。記録・設定はアクセスしたブラウザの `localStorage` に保存されるため、ブラウザや端末が変わると共有されません。
 
 ## 主な使用技術
 
@@ -56,7 +58,7 @@ nvmを利用している場合は、リポジトリのルートで `nvm use` を
    npm --version
    ```
 
-3. ロックファイルに基づいて依存関係をインストールします。
+3. リポジトリのルートで、ロックファイルに基づいて依存関係をインストールします。すべてのワークスペースの依存関係がまとめてインストールされます。
 
    ```bash
    npm ci
@@ -65,7 +67,7 @@ nvmを利用している場合は、リポジトリのルートで `nvm use` を
 4. 開発サーバーを起動します。
 
    ```bash
-   npm run dev
+   npm run dev:intake
    ```
 
 5. ブラウザで [http://localhost:3000](http://localhost:3000) を開きます。
@@ -76,19 +78,25 @@ nvmを利用している場合は、リポジトリのルートで `nvm use` を
 
 ## npmスクリプト
 
+npmスクリプトはリポジトリのルートで実行します。`lint`・`test`・`typecheck`・`build` は、型生成（`generate`）を先に実行してから、各ワークスペースの同名スクリプトを実行します。
+
 | コマンド | 用途 |
 |---|---|
-| `npm run dev` | 開発サーバーを起動する |
+| `npm run dev:intake` | 摂取記録アプリの開発サーバーを起動する |
 | `npm run build` | 本番用ビルドを作成する |
-| `npm run start` | 作成済みの本番用ビルドを起動する |
+| `npm run start:intake` | 作成済みの摂取記録アプリの本番用ビルドを起動する |
 | `npm run lint` | ESLintによる静的解析を実行する |
-| `npm test` | カフェイン計算、日時処理、ストレージ処理のロジックテストを実行する |
+| `npm test` | カフェイン計算、日時処理、ストレージ処理などのロジックテストを実行する |
+| `npm run typecheck` | TypeScriptの型チェックを実行する |
+| `npm run generate` | 型などの生成物を作成する（生成処理を持つワークスペースがある場合のみ） |
+
+特定のワークスペースだけでスクリプトを実行する場合は、`-w` でワークスペースを指定します（例: `npm run lint -w apps/intake`）。
 
 本番用の動作をローカルで確認する場合は、先にビルドしてからサーバーを起動します。
 
 ```bash
 npm run build
-npm run start
+npm run start:intake
 ```
 
 ## 開発時の検証
@@ -101,6 +109,8 @@ npm test
 npm run build
 ```
 
+型だけを素早く確認したい場合は `npm run typecheck` も利用できます。
+
 - `npm run lint`: コードを静的解析し、規約違反がないことを確認します。
 - `npm test`: ロジックテストを複数のタイムゾーンで実行します。
 - `npm run build`: 型チェックを含む本番用ビルドが完了することを確認します。
@@ -108,6 +118,18 @@ npm run build
 いずれもエラーなく終了することが期待結果です。
 
 ## 主なディレクトリ
+
+### リポジトリ全体
+
+| ディレクトリ | 役割 |
+|---|---|
+| `apps/intake/` | 摂取記録アプリ（Next.js、PWA） |
+| `docs/` | 検証のエビデンスなどの記録 |
+| `members/` | メンバーごとのAI活用ログなど |
+| `templates/` | 指示書・ログ・報告のテンプレート |
+| `.github/` | GitHub Actions（CI）の設定 |
+
+### 摂取記録アプリ（`apps/intake/`）
 
 | ディレクトリ | 役割 |
 |---|---|
@@ -118,7 +140,8 @@ npm run build
 | `data/` | 飲料プリセットなどのデータ |
 | `types/` | TypeScriptの型定義 |
 | `tests/` | ロジックテスト本体、テストランナー、デザイン検証コード |
-| `public/` | 画像などの静的ファイル |
+| `public/` | 画像、manifest、サービスワーカーなどの静的ファイル |
+| `design/` | デザインハンドオフ資料 |
 
 ## 開発上の注意事項
 
@@ -140,7 +163,7 @@ npm run build
 先に起動している開発サーバーがあれば、そのターミナルで `Ctrl+C` を押して終了してください。別のポートを使用する場合は、例えば次のコマンドで3001番ポートを指定できます。
 
 ```bash
-npm run dev -- -p 3001
+npm run dev:intake -- -p 3001
 ```
 
 この場合は、ブラウザで [http://localhost:3001](http://localhost:3001) を開いてください。ポートが変わると `localStorage` の保存先も別になります。
@@ -151,7 +174,7 @@ npm run dev -- -p 3001
 
 `npm ci` は `package-lock.json` と `package.json` の整合性も検証します。これらのファイルを自己判断で書き換えず、整合性に関するエラーが続く場合はプロジェクトの管理者へ相談してください。
 
-### `npm run dev` で起動しない
+### `npm run dev:intake` で起動しない
 
 依存関係のインストールが完了していること、Node.jsが24.22.3以上の24.xであること、利用するポートが空いていることを確認してください。解決しない場合は、ターミナルに表示されたエラーメッセージを添えてプロジェクトの管理者へ相談してください。
 

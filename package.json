@@ -5,31 +5,22 @@
   "engines": {
     "node": ">=24.22.3 <25"
   },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "overrides": {
     "@typescript-eslint/typescript-estree": {
       "minimatch": "11.0.8"
     }
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test": "node tests/run.mjs"
-  },
-  "dependencies": {
-    "next": "16.4.6",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^24.19.2",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.6",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "generate": "npm run generate --workspaces --if-present",
+    "lint": "npm run generate && npm run lint --workspaces --if-present",
+    "test": "npm run generate && npm run test --workspaces --if-present",
+    "typecheck": "npm run generate && npm run typecheck --workspaces --if-present",
+    "build": "npm run generate && npm run build --workspaces --if-present",
+    "dev:intake": "npm run dev -w apps/intake --",
+    "start:intake": "npm run start -w apps/intake --"
   }
 }

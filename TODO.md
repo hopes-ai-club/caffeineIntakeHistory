@@ -3,11 +3,13 @@
 `CLAUDE.md` の要件定義に基づく実装計画。フェーズ順に上から着手する想定。
 `CLAUDE.md` / `TODO.md` はフェーズ0着手前に初回コミット済みとする。以降は各フェーズごとに担当者がコーディングし、完了したらPUSHする。
 
+> 2026-11 のモノレポ化（[#59](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/59)）により、摂取記録アプリは `apps/intake/` へ移動した。フェーズ0〜7に記載のファイルパス（`app/`・`components/`・`lib/`・`tests/` など）は `apps/intake/` からの相対パスとして読む。各メモ内のパスやコマンドは当時の記録のため書き換えていない。
+
 ## デザイン参照
-UI実装は `design/caffeine-log/` のデザインハンドオフを参照して行う。
-- `design/caffeine-log/Caffeine Log.dc.html` — 4画面（ホーム／記録追加／体内残量詳細／履歴）のHigh-fidelityデザイン本体（ブラウザで直接開ける）
-- `design/caffeine-log/README.md` — 画面仕様・配色/タイポ/余白などのデザイントークン・状態設計・インタラクション仕様
-- `design/caffeine-log/ios-frame.jsx` — 端末フレーム（実装不要、プレビュー用）
+UI実装は `apps/intake/design/caffeine-log/` のデザインハンドオフを参照して行う。
+- `apps/intake/design/caffeine-log/Caffeine Log.dc.html` — 4画面（ホーム／記録追加／体内残量詳細／履歴）のHigh-fidelityデザイン本体（ブラウザで直接開ける）
+- `apps/intake/design/caffeine-log/README.md` — 画面仕様・配色/タイポ/余白などのデザイントークン・状態設計・インタラクション仕様
+- `apps/intake/design/caffeine-log/ios-frame.jsx` — 端末フレーム（実装不要、プレビュー用）
 
 HTML/インラインスタイルはそのまま流用せず、Next.js（App Router / TypeScript / Tailwind CSS）のプロジェクト規約に沿って **Tailwindクラスで再現** する。配色・タイポ・余白・角丸はREADME記載の値をピクセル単位で再現する（High-fidelity）。
 
@@ -214,3 +216,30 @@ HTML/インラインスタイルはそのまま流用せず、Next.js（App Rout
 - [ ] GitHubリポジトリへプッシュ
 - [ ] Vercelプロジェクトの作成・連携
 - [ ] 本番環境での動作確認
+
+## フェーズ8: 飲み物マスタサービス（[#48](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/48)）
+
+飲み物プリセットをマスタ化し、運営者が管理できるマスタサービスをサブシステムとして追加する。各項目の詳細は対応するIssueで決め、決まった内容をそのIssueの中で `CLAUDE.md`・本ファイルへ反映する。
+
+### 8-1. 移行・ドキュメント
+- [x] モノレポ化と既存アプリの `apps/intake` への移動、CLAUDE.md・TODO.md・README の初回更新（#59）
+- [ ] VercelのRoot Directoryを `apps/intake` に変更する（#67 のマージ直前に実施）（#59）
+- [ ] #67 のマージ後、Vercelの本番デプロイが成功し、本番URLでアプリが表示されることを確認する（#59）
+
+### 8-2. 技術
+- [ ] マスタサービスのORM・マイグレーション・DB接続方式を決める（#49）
+- [ ] 運営者のログイン方式とアカウント管理方法を決める（#50）
+- [ ] OpenAPIによるAPI契約の運用とAPI規約を決める（#52）
+- [ ] APIキーの運用と将来の移行方針を決める（#53）
+- [ ] Supabaseプロジェクトの環境共有によるリスク対策を決める（#54）
+
+### 8-3. 配信・アプリ側との接点
+- [ ] マスタの配信・端末キャッシュ・更新検知の方式を決める（#55）
+- [ ] 摂取記録アプリ内のマスタ窓口（モジュール構成）を決める（#56、#55の後）
+
+### 8-4. データモデル・整合性
+- [ ] 飲み物マスタのデータモデルとIDの方針を決める（#57）
+- [ ] マスタ変更と既存の摂取記録との整合ルールを決める（#58、#57の後）
+
+### 8-5. 業務要件（運営）
+- [ ] 運営業務フロー（権限・承認・変更履歴・同時編集）を決める（#51）

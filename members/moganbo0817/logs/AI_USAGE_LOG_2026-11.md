@@ -27,3 +27,24 @@
 | 根拠コミット | `8280f0b` — chore: add GitHub Actions CI workflow／`9522f52` — chore: update CI actions to v7 and read Node.js version from .nvmrc／`f061e7a` — Merge remote-tracking branch 'origin/main' into chore/add-github-actions-ci／`e944e7a`・`1f535c1`・`cf24ad1`・`cc15461` — CI失敗確認用のコミット（lint／test／buildの破壊と復元） |
 | Issue | [#35 — CI（GitHub Actions）導入を検討する](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/35) |
 | Pull Request | [#46 — chore: add GitHub Actions CI workflow](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/46)（失敗確認のエビデンス: [コメント](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/46#issuecomment-7054945915)） |
+
+## 2026-11-23 〜 2026-11-29
+
+### 2026-11-28 — モノレポ化PRのレビュー対応（PR #67、Issue #59）
+
+| 項目 | 内容 |
+|---|---|
+| 日付 | 2026-11-28 |
+| 工程 | レビュー／文書化 |
+| ツール | Claude Code |
+| タスク概要 | PR #67 のレビューで指摘された2点に対応した。親Issue #48 の「決定事項」に #59 の決定内容の要点を追記し、TODO.md フェーズ8-1で対応済みの項目にチェックを入れた。あわせて、Vercel の項目を「Root Directory の変更（マージ直前）」と「本番デプロイの確認（マージ後）」の2項目に分け、`apps/master`・`packages/master-contract` を README のみで作成した件を #59 に補足コメントとして残した。 |
+| 採用状況 | 修正して採用 |
+| プロンプトの要点 | PRのURLを示してレビューコメントの確認を依頼された。指摘の妥当性の説明を求められ、#59 の受け入れ条件と #48 本文の運用ルールを根拠に、2点とも妥当と回答した。#48 が肥大化しないよう、記載は要点に絞って子Issueを参照する形にしてほしいと依頼された。Vercel の項目について、チェックするタイミングを注記する案は対応しにくいと指摘され、作業ごとのチェック項目に分ける案と、チェックをいつ・どう入れるかを提示した。チェックはマージ後に別のPRでまとめて入れる方針になった。 |
+| 手戻り・誤り | 最初の #48 の文案（14行）は詳細を書きすぎていたため、要点だけの5行に書き直した。#59 への補足コメントで、Issue へのコメントなのに「本PR（#67）」と書いてしまい、投稿後に「PR #67 では」に修正した。TODO.md の Vercel の項目に、最初はチェックするタイミングを注記する形で追記したが、対応しにくいとの指摘を受け、2つのチェック項目に分ける形に変更した。 |
+| 所要時間 | 未計測 |
+| 学び | 親Issueには他のサブIssueにも関わる方針だけを書き、詳細は子Issueへのリンクで参照すると、親Issueが肥大化しない。決定事項と実際の対応が違う点（README のみの先行作成）は、親Issueではなく決定した子Issueに補足する。TODO は注記で条件を説明するより、時期の違う作業を別の項目に分けて完了の基準を書くほうが対応しやすい。マージ後にしか終わらない作業は、そのPRの中ではチェックできないため、チェックをいつ・どのPRで入れるかを先に決めておく。 |
+| 実施した検証 | `git diff --check`（成功）。#48 の本文を書き換える前後で差分を取り、追記した節以外に変更がないことを確認した。文書だけの変更のため lint・test・build は実行していない。 |
+| 未検証事項 | Vercel の Root Directory の変更と本番デプロイの確認（#67 のマージ時に実施し、マージ後に別のPRで TODO.md にチェックを入れる）。 |
+| 根拠コミット | `def9f0d` — docs: mark monorepo migration task as done in TODO／`433c471` — docs: split Vercel task into concrete steps in TODO |
+| Issue | [#59 — モノレポ化と既存アプリの移動方針を決める](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/59)（[補足コメント](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/59#issuecomment-7238696784)）／[#48 — 飲み物マスタをマスタサービス（サブシステム）として管理できるようにする：技術構成と検討項目](https://github.com/hopes-ai-club/caffeineIntakeHistory/issues/48) |
+| Pull Request | [#67 — chore: モノレポ化し、摂取記録アプリを apps/intake へ移動](https://github.com/hopes-ai-club/caffeineIntakeHistory/pull/67) |

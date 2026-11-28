@@ -37,7 +37,7 @@ description: Safely manage branches, commits, pushes, and pull requests for this
 
 - `npm test`
 - `npm run lint`
-- `npx tsc --noEmit`
+- `npm run typecheck`
 - `npm run build`
 - `git diff --check`
 
