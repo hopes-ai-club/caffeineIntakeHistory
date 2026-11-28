@@ -223,7 +223,8 @@ HTML/インラインスタイルはそのまま流用せず、Next.js（App Rout
 
 ### 8-1. 移行・ドキュメント
 - [x] モノレポ化と既存アプリの `apps/intake` への移動、CLAUDE.md・TODO.md・README の初回更新（#59）
-- [ ] VercelのRoot Directoryを `apps/intake` に変更し、本番デプロイを確認（#59）
+- [ ] VercelのRoot Directoryを `apps/intake` に変更する（#67 のマージ直前に実施）（#59）
+- [ ] #67 のマージ後、Vercelの本番デプロイが成功し、本番URLでアプリが表示されることを確認する（#59）
 
 ### 8-2. 技術
 - [ ] マスタサービスのORM・マイグレーション・DB接続方式を決める（#49）
