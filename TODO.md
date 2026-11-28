@@ -222,7 +222,7 @@ HTML/インラインスタイルはそのまま流用せず、Next.js（App Rout
 飲み物プリセットをマスタ化し、運営者が管理できるマスタサービスをサブシステムとして追加する。各項目の詳細は対応するIssueで決め、決まった内容をそのIssueの中で `CLAUDE.md`・本ファイルへ反映する。
 
 ### 8-1. 移行・ドキュメント
-- [ ] モノレポ化と既存アプリの `apps/intake` への移動、CLAUDE.md・TODO.md・README の初回更新（#59）
+- [x] モノレポ化と既存アプリの `apps/intake` への移動、CLAUDE.md・TODO.md・README の初回更新（#59）
 - [ ] VercelのRoot Directoryを `apps/intake` に変更し、本番デプロイを確認（#59）
 
 ### 8-2. 技術
